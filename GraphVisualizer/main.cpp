@@ -10,9 +10,11 @@
 #include <boost/format.hpp>
 #pragma warning(pop)
 
+using EdgeWeightType = std::string;
+
 using Edge = std::pair<size_t, size_t>;
-using WeightedEdge = std::pair<Edge, double>;
-using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::property<boost::vertex_color_t, boost::default_color_type>, boost::property<boost::edge_weight_t, double>>;
+using WeightedEdge = std::pair<Edge, EdgeWeightType>;
+using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::property<boost::vertex_color_t, boost::default_color_type>, boost::property<boost::edge_weight_t, EdgeWeightType>>;
 
 namespace
 {
@@ -31,7 +33,7 @@ size_t CountVertices(const std::vector<Edge>& edges)
 
 }
 
-void ToGraphizFormat(const std::vector<Edge>& edges, const std::vector<double>& weights)
+void ToGraphizFormat(const std::vector<Edge>& edges, const std::vector<EdgeWeightType>& weights)
 {
 	Graph graph(edges.begin(), edges.end(), weights.begin(), CountVertices(edges));
 
@@ -55,7 +57,7 @@ void ToGraphizFormat(const std::vector<WeightedEdge> & weightedEdges)
 	std::vector<Edge> edges;
 	edges.reserve(weightedEdges.size());
 
-	std::vector<double> weights;
+	std::vector<EdgeWeightType> weights;
 	weights.reserve(weightedEdges.size());
 
 	for (const auto& [edge, weight] : weightedEdges)
@@ -69,11 +71,11 @@ void ToGraphizFormat(const std::vector<WeightedEdge> & weightedEdges)
 int main()
 {
 	std::vector<Edge> edges;
-	std::vector<double> weights;
+	std::vector<EdgeWeightType> weights;
 
 	size_t firstVertex;
 	size_t secondVertex;
-	double weight;
+	EdgeWeightType weight;
 	while ((std::cin >> firstVertex) && (std::cin >> secondVertex) && (std::cin >> weight))
 	{
 		edges.emplace_back(firstVertex, secondVertex);
