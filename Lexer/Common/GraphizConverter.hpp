@@ -29,7 +29,6 @@ void RenderMealy(const MachineData & moore, const MealyData & mealyData, const M
 
 void RenderMoore(const MachineData & mealy, const MealyData & mealyData)
 {
-	std::vector<Edge> inputEdges;
 	std::string str1;
 	std::string str2;
 
@@ -43,6 +42,8 @@ void RenderMoore(const MachineData & mealy, const MealyData & mealyData)
 		}
 	}
 
+	std::vector<Edge> inputEdges;
+	inputEdges.reserve(a.size() / 2);
 	for (size_t i = 1; i < a.size(); i += 2)
 	{
 		inputEdges.emplace_back(a[i - 1], a[i]);
@@ -62,7 +63,7 @@ void RenderMoore(const MachineData & mealy, const MealyData & mealyData)
 
 		for (size_t j = 0; j < mealy.m_inputAmount; ++j)
 		{
-			auto it = std::find(uniqueEdges.begin(), uniqueEdges.end(), inputEdges[index]);
+			const auto it = std::find(uniqueEdges.begin(), uniqueEdges.end(), inputEdges[index]);
 			outputState[indexEdge] = int(std::distance(uniqueEdges.begin(), it));
 
 			if (j < mealy.m_inputAmount - 1)
@@ -74,6 +75,7 @@ void RenderMoore(const MachineData & mealy, const MealyData & mealyData)
 	}
 
 	std::vector<WeightedEdge> weightedEdges;
+	weightedEdges.reserve(outputState.size());
 	for (size_t i = 0, x = 0, index = 0; i < outputState.size(); ++i, ++index)
 	{
 		if (i % uniqueEdges.size() == 0 && i != 0)

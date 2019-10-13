@@ -8,7 +8,7 @@
 
 #include "../Common/GraphizConverter.hpp"
 #include "../Common/MachineData.hpp"
-#include "ConverterIO.hpp"
+#include "../Common/IOUtils.hpp"
 
 std::unique_ptr<MachineData> MealyToMoore(const MachineData & mealy)
 {

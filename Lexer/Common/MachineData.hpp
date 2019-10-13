@@ -1,5 +1,7 @@
 #pragma once
 
+#include <variant>
+
 #include "Matrix.hpp"
 
 using InputSignal = size_t;
@@ -29,14 +31,14 @@ struct OutputState
 	MachineState state;
 	OutputSignal output;
 
-	bool operator<(const OutputState & other) const
+	bool operator<(const OutputState & other) const noexcept
 	{
 		return (state == other.state)
 			? (output < other.output)
 			: (state < other.state);
 	}
 
-	bool operator!=(OutputState const& other) const
+	bool operator!=(OutputState const& other) const noexcept
 	{
 		return (state != other.state || output != other.output);
 	}
@@ -62,7 +64,7 @@ public:
 		}
 	}
 
-	MachineType GetType() const
+	MachineType GetType() const noexcept
 	{
 		return m_type;
 	}

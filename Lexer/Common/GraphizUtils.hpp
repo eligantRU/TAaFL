@@ -25,7 +25,7 @@ size_t CountVertices(const std::vector<Edge> & edges)
 {
 	std::set<size_t> uniqueVerices;
 
-	for (const auto& [firstVertex, secondVertex] : edges)
+	for (const auto & [firstVertex, secondVertex] : edges)
 	{
 		uniqueVerices.emplace(firstVertex);
 		uniqueVerices.emplace(secondVertex);
