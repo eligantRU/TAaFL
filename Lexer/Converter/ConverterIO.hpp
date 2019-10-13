@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-#include "MachineData.hpp"
+#include "../Common/MachineData.hpp"
 
 MachineType ParseTypeStr(const std::string & str)
 {

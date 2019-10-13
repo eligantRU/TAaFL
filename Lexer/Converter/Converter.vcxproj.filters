@@ -18,16 +18,16 @@
     <ClInclude Include="ConverterIO.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GraphizConverter.hpp">
+    <ClInclude Include="..\Common\GraphizConverter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GraphizUtils.hpp">
+    <ClInclude Include="..\Common\GraphizUtils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MachineData.hpp">
+    <ClInclude Include="..\Common\MachineData.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Matrix.hpp">
+    <ClInclude Include="..\Common\Matrix.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

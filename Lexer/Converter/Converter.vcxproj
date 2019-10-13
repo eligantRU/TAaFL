@@ -19,11 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Common\GraphizConverter.hpp" />
+    <ClInclude Include="..\Common\GraphizUtils.hpp" />
+    <ClInclude Include="..\Common\MachineData.hpp" />
+    <ClInclude Include="..\Common\Matrix.hpp" />
     <ClInclude Include="ConverterIO.hpp" />
-    <ClInclude Include="GraphizConverter.hpp" />
-    <ClInclude Include="GraphizUtils.hpp" />
-    <ClInclude Include="MachineData.hpp" />
-    <ClInclude Include="Matrix.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -31,7 +31,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{FB346DAF-9474-4546-85F6-A4BB59B77AA2}</ProjectGuid>
-    <RootNamespace>Conversion</RootNamespace>
+    <RootNamespace>Converter</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>AutomataConverter</ProjectName>
   </PropertyGroup>

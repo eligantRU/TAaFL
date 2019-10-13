@@ -6,8 +6,8 @@
 #include <string>
 #include <map>
 
-#include "GraphizConverter.hpp"
-#include "MachineData.hpp"
+#include "../Common/GraphizConverter.hpp"
+#include "../Common/MachineData.hpp"
 #include "ConverterIO.hpp"
 
 std::unique_ptr<MachineData> MealyToMoore(const MachineData & mealy)
