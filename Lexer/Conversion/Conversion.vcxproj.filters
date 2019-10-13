@@ -15,24 +15,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\!TAaFL2\MachineConverter\ConverterIO.hpp">
+    <ClInclude Include="ConverterIO.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\!TAaFL2\MachineConverter\GraphizConverter.hpp">
+    <ClInclude Include="GraphizConverter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\!TAaFL2\MachineConverter\GraphizUtils.hpp">
+    <ClInclude Include="GraphizUtils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\!TAaFL2\MachineConverter\MachineData.hpp">
+    <ClInclude Include="MachineData.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\!TAaFL2\MachineConverter\Matrix.hpp">
+    <ClInclude Include="Matrix.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\!TAaFL2\MachineConverter\main.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
