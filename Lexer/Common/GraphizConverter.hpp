@@ -3,21 +3,23 @@
 #include "GraphizUtils.hpp"
 #include "MachineData.hpp"
 
-void RenderMealy(const MachineData & moore, const MealyData & mealyData, const MooreData & mooreData)
+void RenderMealy(const MachineData & mealy)
 {
+	const auto mealyData = mealy.m_typedData.GetMealyData();
+
 	std::vector<Edge> edges;
 	for (size_t i = 0; i < mealyData.GetRowCount(); ++i)
 	{
-		for (size_t j = 0; j < mooreData.m_output.size(); ++j)
+		for (size_t j = 0; j < mealy.m_stateAmount; ++j)
 		{
-			edges.emplace_back(mealyData(i, j).state, mooreData.m_output[mealyData(i, j).state]);
+			edges.emplace_back(mealyData(i, j).state, mealyData(i, j).output);
 		}
 	}
 
 	std::vector<WeightedEdge> weightedEdges;
 	for (size_t i = 0, x = 0, index = 0; i < edges.size(); ++i, ++index)
 	{
-		if ((i % moore.m_stateAmount == 0) && (i != 0))
+		if ((i % mealy.m_stateAmount == 0) && (i != 0))
 		{
 			++x;
 			index = 0;

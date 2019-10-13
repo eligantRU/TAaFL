@@ -68,7 +68,7 @@ std::unique_ptr<MachineData> MooreToMealy(const MachineData & moore)
 		}
 	}
 
-	RenderMealy(moore, mealyData, mooreData);
+	RenderMealy(*mealy);
 
 	return mealy;
 }
