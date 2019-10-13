@@ -55,7 +55,7 @@ void ToGraphizFormat(const std::vector<Edge> & edges, const std::vector<EdgeWeig
 #pragma warning(pop)
 }
 
-void ToGraphizFormat(const std::vector<WeightedEdge>& weightedEdges)
+void ToGraphizFormat(const std::vector<WeightedEdge> & weightedEdges)
 {
 	std::vector<Edge> edges;
 	edges.reserve(weightedEdges.size());
