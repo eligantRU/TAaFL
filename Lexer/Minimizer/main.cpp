@@ -1,23 +1,33 @@
 #include <iostream>
+#include <fstream>
+#include <istream>
 #include <cassert>
 #include <vector>
 #include <string>
-#include <memory>
 
+#include "../Common/GraphizConverter.hpp"
 #include "../Common/MachineData.hpp"
 #include "../Common/IOUtils.hpp"
 
-using namespace std;
-
-bool TransitionExist(MachineData const& machine, MachineState src, MachineState dest)
+bool TransitionExist(const MachineData & machine, MachineState src, MachineState dest)
 {
 	for (InputSignal in = 0; in < machine.m_inputAmount; ++in)
 	{
 		switch (machine.m_typedData.GetType())
 		{
+		case MachineType::MOORE:
+		{
+			const MooreData & mooreData = machine.m_typedData.GetMooreData();
+			if (mooreData.m_table(in, src) == dest)
+			{
+				return true;
+			}
+			break;
+		}
+
 		case MachineType::MEALY:
 		{
-			const MealyData& mealyData = machine.m_typedData.GetMealyData();
+			const MealyData & mealyData = machine.m_typedData.GetMealyData();
 			if (mealyData(in, src).state == dest)
 			{
 				return true;
@@ -26,16 +36,15 @@ bool TransitionExist(MachineData const& machine, MachineState src, MachineState 
 		}
 
 		default:
-			assert(false);
-			return false;
+			throw std::invalid_argument("Unexpected automata type");
 		}
 	}
 	return false;
 }
 
-vector<bool> GetReachableStates(MachineData const& machine)
+std::vector<bool> GetReachableStates(const MachineData & machine)
 {
-	vector<bool> reachableStates(machine.m_stateAmount, false);
+	std::vector<bool> reachableStates(machine.m_stateAmount, false);
 	reachableStates[0] = true;
 
 	bool foundNewStates;
@@ -58,19 +67,15 @@ vector<bool> GetReachableStates(MachineData const& machine)
 			}
 		}
 	} while (foundNewStates);
+
 	return reachableStates;
 }
 
-size_t CountTrueValues(vector<bool> const& data)
+std::unique_ptr<MachineData> SaveSpecifiedStates(const MachineData & machine, const std::vector<bool> & states)
 {
-	return std::count(data.cbegin(), data.cend(), true);
-}
+	const MachineState stateCount = std::count(states.cbegin(), states.end(), true);
 
-unique_ptr<MachineData> SaveSpecifiedStates(MachineData const& machine, vector<bool> const& states)
-{
-	const MachineState stateCount = CountTrueValues(states);
-
-	vector<MachineState> newStateFunction(machine.m_stateAmount, machine.m_stateAmount);
+	std::vector<MachineState> newStateFunction(machine.m_stateAmount, machine.m_stateAmount);
 	MachineState newState = 0;
 	for (MachineState oldState = 0; oldState < machine.m_stateAmount; ++oldState)
 	{
@@ -81,14 +86,35 @@ unique_ptr<MachineData> SaveSpecifiedStates(MachineData const& machine, vector<b
 		}
 	}
 
-	unique_ptr<MachineData> result(new MachineData(machine.m_typedData.GetType(), machine.m_inputAmount, machine.m_outputAmount, stateCount));
+	std::unique_ptr<MachineData> result(new MachineData(machine.m_typedData.GetType(), machine.m_inputAmount, machine.m_outputAmount, stateCount));
 
 	switch (machine.m_typedData.GetType())
 	{
+	case MachineType::MOORE:
+	{
+		const MooreData & oldMooreData = machine.m_typedData.GetMooreData();
+		MooreData & newMooreData = result->m_typedData.GetMooreData();
+
+		MachineState newState = 0;
+		for (MachineState oldState = 0; oldState < machine.m_stateAmount; ++oldState)
+		{
+			if (states[oldState])
+			{
+				newMooreData.m_output[newState] = oldMooreData.m_output[oldState];
+				for (InputSignal in = 0; in < machine.m_inputAmount; ++in)
+				{
+					newMooreData.m_table(in, newState) = newStateFunction[oldMooreData.m_table(in, oldState)];
+				}
+				++newState;
+			}
+		}
+		break;
+	}
+
 	case MachineType::MEALY:
 	{
-		MealyData const& oldMealyData = machine.m_typedData.GetMealyData();
-		MealyData& newMealyData = result->m_typedData.GetMealyData();
+		const MealyData & oldMealyData = machine.m_typedData.GetMealyData();
+		MealyData & newMealyData = result->m_typedData.GetMealyData();
 
 		MachineState newState = 0;
 		for (MachineState oldState = 0; oldState < machine.m_stateAmount; ++oldState)
@@ -100,7 +126,6 @@ unique_ptr<MachineData> SaveSpecifiedStates(MachineData const& machine, vector<b
 					newMealyData(in, newState).output = oldMealyData(in, oldState).output;
 					newMealyData(in, newState).state = newStateFunction[oldMealyData(in, oldState).state];
 				}
-
 				++newState;
 			}
 		}
@@ -108,24 +133,42 @@ unique_ptr<MachineData> SaveSpecifiedStates(MachineData const& machine, vector<b
 	}
 
 	default:
-		assert(false);
+		throw std::invalid_argument("Unexpected automata type");
 	}
+
 	return result;
 }
 
-unique_ptr<MachineData> RemoveUnreachableStates(MachineData const& machine)
+std::unique_ptr<MachineData> RemoveUnreachableStates(const MachineData & machine)
 {
 	return SaveSpecifiedStates(machine, GetReachableStates(machine));
 }
 
-bool StatesAreEquivalent(MachineData const& machine, MachineState a, MachineState b)
+bool StatesAreEquivalent(const MachineData & machine, MachineState a, MachineState b)
 {
 	switch (machine.m_typedData.GetType())
 	{
+	case MachineType::MOORE:
+	{
+		const MooreData & mooreData = machine.m_typedData.GetMooreData();
+		if (mooreData.m_output[a] != mooreData.m_output[b])
+		{
+			return false;
+		}
+
+		for (InputSignal in = 0; in < machine.m_inputAmount; ++in)
+		{
+			if (mooreData.m_table(in, a) != mooreData.m_table(in, b))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	case MachineType::MEALY:
 	{
-		MealyData const& mealyData = machine.m_typedData.GetMealyData();
-
+		const MealyData & mealyData = machine.m_typedData.GetMealyData();
 		for (InputSignal in = 0; in < machine.m_inputAmount; ++in)
 		{
 			if (mealyData(in, a) != mealyData(in, b))
@@ -137,12 +180,11 @@ bool StatesAreEquivalent(MachineData const& machine, MachineState a, MachineStat
 	}
 
 	default:
-		assert(false);
-		return false;
+		throw std::invalid_argument("Unexpected automata type");
 	}
 }
 
-void ReplaceStates(MachineData& machine, MachineState find, MachineState replace)
+void ReplaceStates(MachineData & machine, MachineState find, MachineState replace)
 {
 	for (MachineState st = 0; st < machine.m_stateAmount; ++st)
 	{
@@ -150,28 +192,36 @@ void ReplaceStates(MachineData& machine, MachineState find, MachineState replace
 		{
 			switch (machine.m_typedData.GetType())
 			{
+			case MachineType::MOORE:
+			{
+				MooreData & mooreData = machine.m_typedData.GetMooreData();
+				if (mooreData.m_table(in, st) == find)
+				{
+					mooreData.m_table(in, st) = replace;
+				}
+				break;
+			}
+
 			case MachineType::MEALY:
 			{
-				MealyData& mealyData = machine.m_typedData.GetMealyData();
-
+				MealyData & mealyData = machine.m_typedData.GetMealyData();
 				if (mealyData(in, st).state == find)
 				{
 					mealyData(in, st).state = replace;
 				}
-
 				break;
 			}
 
 			default:
-				assert(false);
+				throw std::invalid_argument("Unexpected automata type");
 			}
 		}
 	}
 }
 
-unique_ptr<MachineData> MergeEquivalentStates(MachineData machine)
+std::unique_ptr<MachineData> MergeEquivalentStates(MachineData machine)
 {
-	vector<bool> activeStates(machine.m_stateAmount, true);
+	std::vector<bool> activeStates(machine.m_stateAmount, true);
 
 	bool changesMade;
 	do
@@ -198,16 +248,21 @@ unique_ptr<MachineData> MergeEquivalentStates(MachineData machine)
 	return SaveSpecifiedStates(machine, activeStates);
 }
 
-unique_ptr<MachineData> MinimizeMachine(MachineData const& machine)
+std::unique_ptr<MachineData> MinimizeMachine(const MachineData & machine)
 {
-	return MergeEquivalentStates(*RemoveUnreachableStates(machine));
+	auto minimizedMachine = MergeEquivalentStates(*RemoveUnreachableStates(machine));
+	if (minimizedMachine->m_typedData.GetType() == MachineType::MEALY)
+	{
+		RenderMealy(*minimizedMachine);
+	}
+	return minimizedMachine;
 }
 
-int main(int, char* [])
+int main()
 {
 	try
 	{
-		GetMachineData(cout, *MinimizeMachine(*GetMachineData(cin)));
+		GetMachineData(std::cout, *MinimizeMachine(*GetMachineData(std::cin)));
 	}
 	catch (const std::exception & ex)
 	{
