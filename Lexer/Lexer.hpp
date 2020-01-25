@@ -8,7 +8,7 @@
 #include <string>
 #include <regex>
 
-// TODO: std::istream::unget
+// TODO: std::istream::unget - m_buffered_ch will be redundant
 // TODO: line number with position in the line
 
 enum class LexemeType
@@ -57,10 +57,15 @@ const std::unordered_set<std::string> MATH_OPERATIONS = { "+", "-", "*", "/" };
 
 bool IsNumber(const std::string & lexeme)
 {
-	return std::regex_match(lexeme, std::regex("\\d+"))
-		|| std::regex_match(lexeme, std::regex("\\d+\\.\\d+"))
-		|| std::regex_match(lexeme, std::regex("\\.\\d+"))
-		|| std::regex_match(lexeme, std::regex("\\d+\\."));
+	return std::regex_match(lexeme, std::regex("[-+]?\\d+"))
+		|| std::regex_match(lexeme, std::regex("[-+]?\\d+\\.\\d+"))
+		|| std::regex_match(lexeme, std::regex("[-+]?\\.\\d+"))
+		|| std::regex_match(lexeme, std::regex("[-+]?\\d+\\."));
+}
+
+bool IsIdentifier(const std::string & lexeme)
+{
+	return std::regex_match(lexeme, std::regex("[a-zA-Z_][a-zA-Z0-9_]*"));
 }
 
 LexemeType ClassifyLexeme(const std::string & lexeme)
@@ -82,7 +87,8 @@ LexemeType ClassifyLexeme(const std::string & lexeme)
 	if ((lexeme.front() == '"') && (lexeme.back() == '"')) return LexemeType::StringValue;
 	if ((lexeme == "true") || (lexeme == "false")) return LexemeType::BooleanValue;
 	if (IsNumber(lexeme)) return LexemeType::NumberValue;
-	return LexemeType::Identifier;
+	if (IsIdentifier(lexeme)) return LexemeType::Identifier;
+	return LexemeType::Error;
 }
 
 std::string LexemeTypeToString(LexemeType type)
@@ -137,9 +143,18 @@ class EndOfFileException
 	:public std::exception
 {
 public:
-	explicit EndOfFileException()
+	explicit EndOfFileException(bool isControlled = true)
 		:std::exception()
+		,m_isControlled(isControlled)
 	{}
+
+	bool isControlled() const
+	{
+		return m_isControlled;
+	}
+
+private:
+	bool m_isControlled = false;
 };
 
 };
@@ -162,9 +177,9 @@ public:
 			{
 				lexeme = GetLexemeImpl();
 			}
-			catch (const EndOfFileException &)
+			catch (const EndOfFileException & ex)
 			{
-				return { LexemeType::EndOfFile, "" };
+				return { ex.isControlled() ? LexemeType::EndOfFile : LexemeType::Error, "" };
 			}
 		} while (lexeme.empty());
 		return { ClassifyLexeme(lexeme), lexeme };
@@ -192,6 +207,11 @@ private:
 				{
 					return *lexeme;
 				}
+				return "";
+			}
+			if ((ch == '+') || (ch == '-'))
+			{
+				m_mementoLexeme = std::string(1, ch);
 				return "";
 			}
 
@@ -241,7 +261,7 @@ private:
 		}
 		if (m_strm.eof())
 		{
-			throw std::exception("ERROR");
+			throw EndOfFileException(false);
 		}
 		return '"' + lexeme + '"';
 	}
@@ -291,7 +311,7 @@ private:
 						}
 						isLastAsterisk = ch == '*';
 					}
-					throw std::exception("ERROR");
+					throw EndOfFileException(false);
 				}
 			}
 			else

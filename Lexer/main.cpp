@@ -6,7 +6,7 @@
 int main()
 {
 	try
-	{		
+	{
 		std::ifstream strm("input.txt");
 
 		Lexer lexer(strm);
@@ -14,10 +14,8 @@ int main()
 		bool needIterate = false;
 		do
 		{
-			constexpr auto wrapped = false;
-			constexpr auto wrapper = wrapped ? "'" : "";
 			const auto [type, lexeme] = lexer.GetLexeme();
-			std::cout << LexemeTypeToString(type) << " " << wrapper << lexeme << wrapper << std::endl;
+			std::cout << lexeme << " " << LexemeTypeToString(type) << " " << std::endl;
 			needIterate = type != LexemeType::EndOfFile;
 		} while (needIterate);
 	}
