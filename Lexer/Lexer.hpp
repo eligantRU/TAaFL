@@ -1,13 +1,41 @@
 #pragma once
 
 #include <unordered_set>
+#include <algorithm>
 #include <iostream>
 #include <optional>
 #include <istream>
 #include <string>
+#include <regex>
+
+enum class LexemeType
+{
+	DataType,
+	ReservedIdentifier,
+	KeyWord,
+	Identifier,
+	LeftSquareBracket,
+	RightSquareBracket,
+	LeftCurlyBracket,
+	RightCurlyBracket,
+	OpenParenthesis,
+	CloseParenthesis,
+	LogicalOperation,
+	MathOperation,
+	StringValue,
+	NumberValue,
+	BooleanValue,
+	AssignmentOperator,
+	Semicolon,
+	Comma,
+	EndOfFile,
+	Error,
+};
 
 struct Lexeme
 {
+	LexemeType type;
+	std::string lexeme;
 };
 
 namespace
@@ -18,25 +46,125 @@ const std::unordered_set<char> SEPARATORS = {
 	' ', '\t', ';', ',', '{', '}', '(', ')', '[', ']', '=', '<', '>', '!', '/', '*', '+', '-'
 };
 
+const std::unordered_set<std::string> DATA_TYPES = { "void", "string", "double", "int", "bool", "char" };
+const std::unordered_set<std::string> RESERVED_IDENTIFIERS = { "main", "print", "read" };
+const std::unordered_set<std::string> KEY_WORDS = { "while", "if", "else", "return" };
+const std::unordered_set<std::string> LOGICAL_OPERATIONS = { "==", "&&", "||", "<", ">", "!" };
+const std::unordered_set<std::string> MATH_OPERATIONS = { "+", "-", "*", "/" };
+
+bool IsNumber(const std::string & lexeme)
+{
+	return std::regex_match(lexeme, std::regex("\\d+"))
+		|| std::regex_match(lexeme, std::regex("\\d+\\.\\d+"))
+		|| std::regex_match(lexeme, std::regex("\\.\\d+"))
+		|| std::regex_match(lexeme, std::regex("\\d+\\."));
+}
+
+LexemeType ClassifyLexeme(const std::string & lexeme)
+{
+	if (DATA_TYPES.count(lexeme)) return LexemeType::DataType;
+	if (RESERVED_IDENTIFIERS.count(lexeme)) return LexemeType::ReservedIdentifier;
+	if (MATH_OPERATIONS.count(lexeme)) return LexemeType::MathOperation;
+	if (LOGICAL_OPERATIONS.count(lexeme)) return LexemeType::LogicalOperation;
+	if (KEY_WORDS.count(lexeme)) return LexemeType::KeyWord;
+	if (lexeme == "=") return LexemeType::AssignmentOperator;
+	if (lexeme == "(") return LexemeType::OpenParenthesis;
+	if (lexeme == ")") return LexemeType::CloseParenthesis;
+	if (lexeme == "{") return LexemeType::LeftCurlyBracket;
+	if (lexeme == "}") return LexemeType::RightCurlyBracket;
+	if (lexeme == "[") return LexemeType::LeftSquareBracket;
+	if (lexeme == "]") return LexemeType::RightSquareBracket;
+	if (lexeme == ";") return LexemeType::Semicolon;
+	if (lexeme == ",") return LexemeType::Comma;
+	if ((lexeme.front() == '"') && (lexeme.back() == '"')) return LexemeType::StringValue;
+	if ((lexeme == "true") || (lexeme == "false")) return LexemeType::BooleanValue;
+	if (IsNumber(lexeme)) return LexemeType::NumberValue;
+	return LexemeType::Identifier;
+}
+
+std::string LexemeTypeToString(LexemeType type)
+{
+	switch (type)
+	{
+	case LexemeType::DataType:
+		return "DataType";
+	case LexemeType::ReservedIdentifier:
+		return "ReservedIdentifier";
+	case LexemeType::KeyWord:
+		return "KeyWord";
+	case LexemeType::Identifier:
+		return "Identifier";
+	case LexemeType::LeftSquareBracket:
+		return "LeftSquareBracket";
+	case LexemeType::RightSquareBracket:
+		return "RightSquareBracket";
+	case LexemeType::LeftCurlyBracket:
+		return "LeftCurlyBracket";
+	case LexemeType::RightCurlyBracket:
+		return "RightCurlyBracket";
+	case LexemeType::OpenParenthesis:
+		return "OpenParenthesis";
+	case LexemeType::CloseParenthesis:
+		return "CloseParenthesis";
+	case LexemeType::LogicalOperation:
+		return "LogicalOperation";
+	case LexemeType::MathOperation:
+		return "MathOperation";
+	case LexemeType::StringValue:
+		return "StringValue";
+	case LexemeType::NumberValue:
+		return "NumberValue";
+	case LexemeType::BooleanValue:
+		return "BooleanValue";
+	case LexemeType::AssignmentOperator:
+		return "AssignmentOperator";
+	case LexemeType::Semicolon:
+		return "Semicolon";
+	case LexemeType::Comma:
+		return "Comma";
+	case LexemeType::EndOfFile:
+		return "EndOfFile";
+	case LexemeType::Error:
+	default:
+		return "Error";
+	}
+}
+
+class EndOfFileException
+	:public std::exception
+{
+public:
+	explicit EndOfFileException()
+		:std::exception()
+	{}
+};
+
 };
 
 class Lexer
 {
 public:
-	Lexer(std::istream & strm)
+	Lexer(std::ifstream & strm)
 		:m_strm(strm)
 	{
 		m_strm >> std::noskipws;
 	}
 
-	std::string GetLexeme()
+	Lexeme GetLexeme()
 	{
 		std::string lexeme;
 		do
 		{
-			lexeme = GetLexemeImpl();
+			try
+			{
+				lexeme = GetLexemeImpl();
+			}
+			catch (const EndOfFileException &)
+			{
+				return { LexemeType::EndOfFile, "" };
+			}
 		} while (lexeme.empty());
-		return lexeme;
+		return { ClassifyLexeme(lexeme), lexeme };
 	}
 	
 private:
@@ -44,7 +172,7 @@ private:
 	{
 		if (m_strm.eof())
 		{
-			throw std::exception("EOF");
+			throw EndOfFileException();
 		}
 
 		if (m_buffered_ch)
@@ -130,7 +258,7 @@ private:
 				return "=";
 			}
 		}
-		throw std::exception("EOF");
+		throw EndOfFileException();
 	}
 
 	std::optional<std::string> ProcessSlash()
@@ -169,10 +297,10 @@ private:
 				return "/";
 			}
 		}
-		throw std::exception("EOF");
+		throw EndOfFileException();
 	}
 
-	std::istream & m_strm;
+	std::ifstream & m_strm;
 	std::optional<char> m_buffered_ch;
 	std::optional<std::string> m_mementoLexeme;
 };

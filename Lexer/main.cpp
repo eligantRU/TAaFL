@@ -11,19 +11,18 @@ int main()
 
 		Lexer lexer(strm);
 
-		while (true)
+		bool needIterate = false;
+		do
 		{
 			constexpr auto wrapped = false;
 			constexpr auto wrapper = wrapped ? "'" : "";
-			std::cout << wrapper << lexer.GetLexeme() << wrapper << std::endl;
-		}
+			const auto [type, lexeme] = lexer.GetLexeme();
+			std::cout << LexemeTypeToString(type) << " " << wrapper << lexeme << wrapper << std::endl;
+			needIterate = type != LexemeType::EndOfFile;
+		} while (needIterate);
 	}
 	catch (const std::exception & ex)
 	{
 		std::cerr << ex.what() << std::endl;
-	}
-	catch (...)
-	{
-		std::cerr << "Unknown error" << std::endl;
 	}
 }
