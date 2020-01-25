@@ -8,6 +8,9 @@
 #include <string>
 #include <regex>
 
+// TODO: std::istream::unget
+// TODO: line number with position in the line
+
 enum class LexemeType
 {
 	DataType,
@@ -144,7 +147,7 @@ public:
 class Lexer
 {
 public:
-	Lexer(std::ifstream & strm)
+	Lexer(std::istream & strm)
 		:m_strm(strm)
 	{
 		m_strm >> std::noskipws;
@@ -300,7 +303,7 @@ private:
 		throw EndOfFileException();
 	}
 
-	std::ifstream & m_strm;
+	std::istream & m_strm;
 	std::optional<char> m_buffered_ch;
 	std::optional<std::string> m_mementoLexeme;
 };
