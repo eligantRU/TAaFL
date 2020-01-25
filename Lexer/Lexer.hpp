@@ -49,7 +49,7 @@ const std::unordered_set<char> SEPARATORS = {
 	' ', '\t', ';', ',', '{', '}', '(', ')', '[', ']', '=', '<', '>', '!', '/', '*', '+', '-'
 };
 
-const std::unordered_set<std::string> DATA_TYPES = { "void", "string", "double", "int", "bool", "char" };
+const std::unordered_set<std::string> DATA_TYPES = { "void", "string", "double", "int", "bool" };
 const std::unordered_set<std::string> RESERVED_IDENTIFIERS = { "main", "print", "read" };
 const std::unordered_set<std::string> KEY_WORDS = { "while", "break", "continue", "if", "else", "return" };
 const std::unordered_set<std::string> LOGICAL_OPERATIONS = { "==", "&&", "||", "<", ">", "!" };
