@@ -58,6 +58,8 @@ const std::unordered_set<std::string> MATH_OPERATIONS = { "+", "-", "*", "/" };
 bool IsNumber(const std::string & lexeme)
 {
 	return std::regex_match(lexeme, std::regex("[-+]?\\d+"))
+		|| std::regex_match(lexeme, std::regex("[-+]?0b[01]+"))
+		|| std::regex_match(lexeme, std::regex("[-+]?0x[0-9A-F]+"))
 		|| std::regex_match(lexeme, std::regex("[-+]?\\d+\\.\\d+"))
 		|| std::regex_match(lexeme, std::regex("[-+]?\\.\\d+"))
 		|| std::regex_match(lexeme, std::regex("[-+]?\\d+\\."));
