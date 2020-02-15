@@ -46,7 +46,7 @@ namespace
 	
 const std::unordered_set<char> IGNORED_CHARS = { ' ', '\t' };
 const std::unordered_set<char> SEPARATORS = {
-	' ', '\t', ';', ',', '{', '}', '(', ')', '[', ']', '=', '<', '>', '!', '/', '*', '+', '-'
+	' ', '\t', ';', ',', '{', '}', '(', ')', '[', ']', '=', '<', '>', '!', '/', '*', '+', '-', '"'
 };
 
 const std::unordered_set<std::string> DATA_TYPES = { "void", "string", "double", "int", "bool" };
@@ -86,7 +86,7 @@ LexemeType ClassifyLexeme(const std::string & lexeme)
 	if (lexeme == "]") return LexemeType::RightSquareBracket;
 	if (lexeme == ";") return LexemeType::Semicolon;
 	if (lexeme == ",") return LexemeType::Comma;
-	if ((lexeme.front() == '"') && (lexeme.back() == '"')) return LexemeType::StringValue;
+	if ((lexeme.size() > 1) && (lexeme.front() == '"') && (lexeme.back() == '"')) return LexemeType::StringValue;
 	if ((lexeme == "true") || (lexeme == "false")) return LexemeType::BooleanValue;
 	if (IsNumber(lexeme)) return LexemeType::NumberValue;
 	if (IsIdentifier(lexeme)) return LexemeType::Identifier;
@@ -216,6 +216,10 @@ private:
 				m_mementoLexeme = std::string(1, ch);
 				return "";
 			}
+			if (ch == '"')
+			{
+				return ProcessString();
+			}
 
 			return std::string(1, ch);
 		}
@@ -231,10 +235,6 @@ private:
 
 		while (!m_strm.eof() && (m_strm >> ch) && !SEPARATORS.count(ch))
 		{
-			if (ch == '"')
-			{
-				return ProcessString();
-			}
 			if (ch == '\n' || IGNORED_CHARS.count(ch))
 			{
 				continue;
