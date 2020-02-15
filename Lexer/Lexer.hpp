@@ -181,9 +181,11 @@ public:
 			}
 			catch (const EndOfFileException & ex)
 			{
+				std::cout << "[" << m_currentLine << "] ";
 				return { ex.isControlled() ? LexemeType::EndOfFile : LexemeType::Error, "" };
 			}
 		} while (lexeme.empty());
+		std::cout << "[" << m_currentLine << "] ";
 		return { ClassifyLexeme(lexeme), lexeme };
 	}
 	
@@ -244,6 +246,8 @@ private:
 
 		m_buffered_ch = IGNORED_CHARS.count(ch) ? std::nullopt : std::optional<char>(ch);
 		
+		m_currentLine += (ch == '\n') ? 1 : 0;
+		
 		if (ch == '/')
 		{
 			m_mementoLexeme = lexeme;
@@ -260,6 +264,7 @@ private:
 		while (!m_strm.eof() && (m_strm >> ch) && (ch != '"'))
 		{
 			lexeme += ch;
+			m_currentLine += (ch == '\n') ? 1 : 0;
 		}
 		if (m_strm.eof())
 		{
@@ -299,6 +304,7 @@ private:
 					{
 						m_strm >> ch;
 					}
+					m_currentLine++;
 					return std::nullopt;
 				}
 				if (ch == '*')
@@ -311,6 +317,7 @@ private:
 						{
 							return std::nullopt;
 						}
+						m_currentLine += (ch == '\n') ? 1 : 0;
 						isLastAsterisk = ch == '*';
 					}
 					throw EndOfFileException(false);
@@ -328,4 +335,6 @@ private:
 	std::istream & m_strm;
 	std::optional<char> m_buffered_ch;
 	std::optional<std::string> m_mementoLexeme;
+
+	size_t m_currentLine = 1;
 };
