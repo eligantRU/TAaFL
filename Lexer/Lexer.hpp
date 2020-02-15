@@ -44,9 +44,9 @@ struct Lexeme
 namespace
 {
 	
-const std::unordered_set<char> IGNORED_CHARS = { ' ', '\t' };
+const std::unordered_set<char> IGNORED_CHARS = { ' ', '\t', '\n' };
 const std::unordered_set<char> SEPARATORS = {
-	' ', '\t', ';', ',', '{', '}', '(', ')', '[', ']', '=', '<', '>', '!', '/', '*', '+', '-', '"'
+	' ', '\t', '\n', ';', ',', '{', '}', '(', ')', '[', ']', '=', '<', '>', '!', '/', '*', '+', '-', '"'
 };
 
 const std::unordered_set<std::string> DATA_TYPES = { "void", "string", "double", "int", "bool" };
@@ -235,7 +235,7 @@ private:
 
 		while (!m_strm.eof() && (m_strm >> ch) && !SEPARATORS.count(ch))
 		{
-			if (ch == '\n' || IGNORED_CHARS.count(ch))
+			if (IGNORED_CHARS.count(ch))
 			{
 				continue;
 			}
