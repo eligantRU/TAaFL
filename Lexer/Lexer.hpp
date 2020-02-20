@@ -36,6 +36,7 @@ struct Lexeme
 {
 	LexemeType type;
 	std::string lexeme;
+	size_t lineNum;
 };
 
 namespace
@@ -178,12 +179,10 @@ public:
 			}
 			catch (const EndOfFileException & ex)
 			{
-				std::cout << "[" << m_currentLine << "] ";
-				return { ex.isControlled() ? LexemeType::EndOfFile : LexemeType::Error, "" };
+				return { ex.isControlled() ? LexemeType::EndOfFile : LexemeType::Error, "", m_currentLine };
 			}
 		} while (lexeme.empty());
-		std::cout << "[" << m_currentLine << "] ";
-		return { ClassifyLexeme(lexeme), lexeme };
+		return { ClassifyLexeme(lexeme), lexeme, m_currentLine };
 	}
 	
 private:
