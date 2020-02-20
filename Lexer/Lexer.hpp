@@ -46,7 +46,7 @@ namespace
 	
 const std::unordered_set<char> IGNORED_CHARS = { ' ', '\t', '\n' };
 const std::unordered_set<char> SEPARATORS = {
-	' ', '\t', '\n', ';', ',', '{', '}', '(', ')', '[', ']', '=', '<', '>', '!', '/', '*', '+', '-', '"'
+	' ', '\t', '\n', ';', ',', '{', '}', '(', ')', '[', ']', '=', '<', '>', '!', '/', '*', '+', '-', '"', '#'
 };
 
 const std::unordered_set<std::string> DATA_TYPES = { "void", "string", "double", "int", "bool" };
@@ -205,9 +205,9 @@ private:
 			{
 				return ProcessEqual();
 			}
-			if (ch == '/')
+			if (ch == '#')
 			{
-				if (const auto lexeme = ProcessSlash(); lexeme)
+				if (const auto lexeme = ProcessHash(); lexeme)
 				{
 					return *lexeme;
 				}
@@ -234,7 +234,6 @@ private:
 		}
 
 		char ch;
-
 		while (!m_strm.eof() && (m_strm >> ch) && !SEPARATORS.count(ch))
 		{
 			if (IGNORED_CHARS.count(ch))
@@ -248,7 +247,7 @@ private:
 		
 		m_currentLine += (ch == '\n') ? 1 : 0;
 		
-		if (ch == '/')
+		if (ch == '#')
 		{
 			m_mementoLexeme = lexeme;
 			return "";
@@ -291,42 +290,35 @@ private:
 		throw EndOfFileException();
 	}
 
-	std::optional<std::string> ProcessSlash()
+	std::optional<std::string> ProcessHash()
 	{
 		char ch;
 		if (!m_strm.eof())
 		{
-			if ((m_strm >> ch) && ((ch == '/') || (ch == '*')))
+			m_strm >> ch;
+			if (ch != '#')
 			{
-				if (ch == '/')
+				while (ch != '\n')
 				{
-					while (ch != '\n')
-					{
-						m_strm >> ch;
-					}
-					m_currentLine++;
-					return std::nullopt;
+					m_strm >> ch;
 				}
-				if (ch == '*')
-				{
-					char isLastAsterisk = false;
-					while (!m_strm.eof())
-					{
-						m_strm >> ch;
-						if (ch == '/')
-						{
-							return std::nullopt;
-						}
-						m_currentLine += (ch == '\n') ? 1 : 0;
-						isLastAsterisk = ch == '*';
-					}
-					throw EndOfFileException(false);
-				}
+				m_currentLine++;
+				return std::nullopt;
 			}
 			else
 			{
-				m_buffered_ch = IGNORED_CHARS.count(ch) ? std::nullopt : std::optional<char>(ch);
-				return "/";
+				char isLastHash = false;
+				while (!m_strm.eof())
+				{
+					m_strm >> ch;
+					if (isLastHash && (ch == '#'))
+					{
+						return std::nullopt;
+					}
+					m_currentLine += (ch == '\n') ? 1 : 0;
+					isLastHash = ch == '#';
+				}
+				throw EndOfFileException(false);
 			}
 		}
 		throw EndOfFileException();
