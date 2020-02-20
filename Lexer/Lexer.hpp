@@ -8,9 +8,6 @@
 #include <string>
 #include <regex>
 
-// TODO: std::istream::unget - m_buffered_ch will be redundant
-// TODO: line number with position in the line
-
 enum class LexemeType
 {
 	DataType,
