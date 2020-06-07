@@ -180,10 +180,10 @@ public:
 			}
 			catch (const EndOfFileException & ex)
 			{
-				return { ex.isControlled() ? LexemeType::EndOfFile : LexemeType::Error, "", 0, 0 };
+				return { ex.isControlled() ? LexemeType::EndOfFile : LexemeType::Error, "", m_currentLine, 0 };
 			}
 		} while (lexeme.empty());
-		return { ClassifyLexeme(lexeme), lexeme, 0, 0 };
+		return { ClassifyLexeme(lexeme), lexeme, m_currentLine, 0 };
 	}
 	
 private:
@@ -201,6 +201,7 @@ private:
 		while (!m_strm.eof() && (m_strm >> ch))
 		{
 			wasIterated = true;
+
 			if (ch == '#')
 			{
 				ProcessHash();
@@ -213,6 +214,7 @@ private:
 				{
 					break;
 				}
+				UpdateCurrentLine(ch);
 
 				if (ch == '=')
 				{
@@ -247,6 +249,7 @@ private:
 		char ch;
 		while (!m_strm.eof() && (m_strm >> ch))
 		{
+			UpdateCurrentLine(ch);
 			if (!IGNORED_CHARS.count(ch))
 			{
 				m_strm.unget();
@@ -262,6 +265,7 @@ private:
 		char ch;
 		while (!m_strm.eof() && (m_strm >> ch) && (ch != '"'))
 		{
+			UpdateCurrentLine(ch);
 			lexeme += ch;
 		}
 		if (m_strm.eof())
@@ -304,6 +308,7 @@ private:
 			{
 				m_strm >> ch;
 			}
+			UpdateCurrentLine(ch);
 			return;
 		}
 		else
@@ -312,6 +317,7 @@ private:
 			while (!m_strm.eof())
 			{
 				m_strm >> ch;
+				UpdateCurrentLine(ch);
 				if (isLastHash && (ch == '#'))
 				{
 					return;
@@ -322,5 +328,11 @@ private:
 		}
 	}
 
+	void UpdateCurrentLine(char ch)
+	{
+		m_currentLine += (ch == '\n') ? 1 : 0;
+	}
+
 	std::istream & m_strm;
+	size_t m_currentLine = 1;
 };

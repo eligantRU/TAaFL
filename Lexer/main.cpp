@@ -11,7 +11,7 @@ int main()
 		bool needIterate = false;
 		do
 		{
-			const auto [type, lexeme, lineNum] = lexer.GetLexeme();
+			const auto [type, lexeme, lineNum, linePos] = lexer.GetLexeme();
 			std::cout << "[" << lineNum << "] " << lexeme << " <- " << LexemeTypeToString(type) << std::endl;
 			needIterate = type != LexemeType::EndOfFile;
 		} while (needIterate);
