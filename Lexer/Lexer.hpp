@@ -37,6 +37,7 @@ struct Lexeme
 	LexemeType type;
 	std::string lexeme;
 	size_t lineNum;
+	size_t linePos;
 };
 
 namespace
@@ -179,76 +180,79 @@ public:
 			}
 			catch (const EndOfFileException & ex)
 			{
-				return { ex.isControlled() ? LexemeType::EndOfFile : LexemeType::Error, "", m_currentLine };
+				return { ex.isControlled() ? LexemeType::EndOfFile : LexemeType::Error, "", 0, 0 };
 			}
 		} while (lexeme.empty());
-		return { ClassifyLexeme(lexeme), lexeme, m_currentLine };
+		return { ClassifyLexeme(lexeme), lexeme, 0, 0 };
 	}
 	
 private:
 	std::string GetLexemeImpl()
 	{
+		SkipIgnored();
 		if (m_strm.eof())
 		{
 			throw EndOfFileException();
 		}
 
-		if (m_buffered_ch)
+		char ch;
+		std::string lexeme;
+		auto wasIterated = false;
+		while (!m_strm.eof() && (m_strm >> ch))
 		{
-			const auto ch = *m_buffered_ch;
-			m_buffered_ch = std::nullopt;
-			if (ch == '=')
-			{
-				return ProcessEqual();
-			}
+			wasIterated = true;
 			if (ch == '#')
 			{
-				if (const auto lexeme = ProcessHash(); lexeme)
-				{
-					return *lexeme;
-				}
-				return "";
-			}
-			if ((ch == '+') || (ch == '-'))
-			{
-				m_mementoLexeme = std::string(1, ch);
-				return "";
-			}
-			if (ch == '"')
-			{
-				return ProcessString();
-			}
-
-			return std::string(1, ch);
-		}
-
-		std::string lexeme;
-		if (m_mementoLexeme)
-		{
-			lexeme = *m_mementoLexeme;
-			m_mementoLexeme.reset();
-		}
-
-		char ch;
-		while (!m_strm.eof() && (m_strm >> ch) && !SEPARATORS.count(ch))
-		{
-			if (IGNORED_CHARS.count(ch))
-			{
+				ProcessHash();
 				continue;
+			}
+
+			if (SEPARATORS.count(ch))
+			{
+				if (!lexeme.empty() || IGNORED_CHARS.count(ch))
+				{
+					break;
+				}
+
+				if (ch == '=')
+				{
+					return ProcessEqual();
+				}
+				if ((ch == '+') || (ch == '-'))
+				{
+					const auto nextCh = m_strm.peek();
+					if (isdigit(nextCh) || (nextCh == '.'))
+					{
+						lexeme += ch;
+						continue;
+					}
+				}
+				if (ch == '"')
+				{
+					return ProcessString();
+				}
+				return std::string(1, ch);
 			}
 			lexeme += ch;
 		}
-
-		m_buffered_ch = IGNORED_CHARS.count(ch) ? std::nullopt : std::optional<char>(ch);
-		
-		m_currentLine += (ch == '\n') ? 1 : 0;
-		
-		if (ch == '#')
+		if (wasIterated)
 		{
-			m_mementoLexeme = lexeme;
-			return "";
+			m_strm.unget();
 		}
 		return lexeme;
+	}
+
+	void SkipIgnored()
+	{
+		char ch;
+		while (!m_strm.eof() && (m_strm >> ch))
+		{
+			if (!IGNORED_CHARS.count(ch))
+			{
+				m_strm.unget();
+				break;
+			}
+		}
 	}
 
 	std::string ProcessString()
@@ -259,7 +263,6 @@ private:
 		while (!m_strm.eof() && (m_strm >> ch) && (ch != '"'))
 		{
 			lexeme += ch;
-			m_currentLine += (ch == '\n') ? 1 : 0;
 		}
 		if (m_strm.eof())
 		{
@@ -270,59 +273,54 @@ private:
 
 	std::string ProcessEqual()
 	{
-		char ch;
 		if (!m_strm.eof())
 		{
+			char ch;
 			if ((m_strm >> ch) && (ch == '='))
 			{
 				return "==";
 			}
 			else
 			{
-				m_buffered_ch = IGNORED_CHARS.count(ch) ? std::nullopt : std::optional<char>(ch);
+				m_strm.unget();
 				return "=";
 			}
 		}
 		throw EndOfFileException();
 	}
 
-	std::optional<std::string> ProcessHash()
+	void ProcessHash()
 	{
-		char ch;
-		if (!m_strm.eof())
+		if (m_strm.eof())
 		{
-			m_strm >> ch;
-			if (ch != '#')
-			{
-				while (ch != '\n')
-				{
-					m_strm >> ch;
-				}
-				m_currentLine++;
-				return std::nullopt;
-			}
-			else
-			{
-				char isLastHash = false;
-				while (!m_strm.eof())
-				{
-					m_strm >> ch;
-					if (isLastHash && (ch == '#'))
-					{
-						return std::nullopt;
-					}
-					m_currentLine += (ch == '\n') ? 1 : 0;
-					isLastHash = ch == '#';
-				}
-				throw EndOfFileException(false);
-			}
+			throw EndOfFileException();
 		}
-		throw EndOfFileException();
+		
+		char ch;
+		m_strm >> ch;
+		if (ch != '#')
+		{
+			while (ch != '\n')
+			{
+				m_strm >> ch;
+			}
+			return;
+		}
+		else
+		{
+			char isLastHash = false;
+			while (!m_strm.eof())
+			{
+				m_strm >> ch;
+				if (isLastHash && (ch == '#'))
+				{
+					return;
+				}
+				isLastHash = ch == '#';
+			}
+			throw EndOfFileException(false);
+		}
 	}
 
 	std::istream & m_strm;
-	std::optional<char> m_buffered_ch;
-	std::optional<std::string> m_mementoLexeme;
-
-	size_t m_currentLine = 1;
 };
