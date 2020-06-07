@@ -180,10 +180,10 @@ public:
 			}
 			catch (const EndOfFileException & ex)
 			{
-				return { ex.isControlled() ? LexemeType::EndOfFile : LexemeType::Error, "", m_currentLine, 0 };
+				return { ex.isControlled() ? LexemeType::EndOfFile : LexemeType::Error, "", m_currentLine, m_currentPos };
 			}
 		} while (lexeme.empty());
-		return { ClassifyLexeme(lexeme), lexeme, m_currentLine, 0 };
+		return { ClassifyLexeme(lexeme), lexeme, m_currentLine, m_currentPos };
 	}
 	
 private:
@@ -201,7 +201,7 @@ private:
 		while (!m_strm.eof() && (m_strm >> ch))
 		{
 			wasIterated = true;
-
+			++m_currentPos;
 			if (ch == '#')
 			{
 				ProcessHash();
@@ -240,6 +240,10 @@ private:
 		if (wasIterated)
 		{
 			m_strm.unget();
+			if (m_currentPos != 0)
+			{
+				--m_currentPos;
+			}
 		}
 		return lexeme;
 	}
@@ -249,9 +253,14 @@ private:
 		char ch;
 		while (!m_strm.eof() && (m_strm >> ch))
 		{
+			++m_currentPos;
 			UpdateCurrentLine(ch);
 			if (!IGNORED_CHARS.count(ch))
 			{
+				if (m_currentPos != 0)
+				{
+					--m_currentPos;
+				}
 				m_strm.unget();
 				break;
 			}
@@ -265,9 +274,11 @@ private:
 		char ch;
 		while (!m_strm.eof() && (m_strm >> ch) && (ch != '"'))
 		{
+			++m_currentPos;
 			UpdateCurrentLine(ch);
 			lexeme += ch;
 		}
+		++m_currentPos;
 		if (m_strm.eof())
 		{
 			throw EndOfFileException(false);
@@ -282,6 +293,7 @@ private:
 			char ch;
 			if ((m_strm >> ch) && (ch == '='))
 			{
+				++m_currentPos;
 				return "==";
 			}
 			else
@@ -302,11 +314,13 @@ private:
 		
 		char ch;
 		m_strm >> ch;
+		++m_currentPos;
 		if (ch != '#')
 		{
 			while (ch != '\n')
 			{
 				m_strm >> ch;
+				++m_currentPos;
 			}
 			UpdateCurrentLine(ch);
 			return;
@@ -317,6 +331,7 @@ private:
 			while (!m_strm.eof())
 			{
 				m_strm >> ch;
+				++m_currentPos;
 				UpdateCurrentLine(ch);
 				if (isLastHash && (ch == '#'))
 				{
@@ -330,9 +345,14 @@ private:
 
 	void UpdateCurrentLine(char ch)
 	{
-		m_currentLine += (ch == '\n') ? 1 : 0;
+		if (ch == '\n')
+		{
+			++m_currentLine;
+			m_currentPos = 0;
+		}
 	}
 
 	std::istream & m_strm;
 	size_t m_currentLine = 1;
+	size_t m_currentPos = 0;
 };

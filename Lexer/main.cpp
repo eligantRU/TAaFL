@@ -12,7 +12,7 @@ int main()
 		do
 		{
 			const auto [type, lexeme, lineNum, linePos] = lexer.GetLexeme();
-			std::cout << "[" << lineNum << "] " << lexeme << " <- " << LexemeTypeToString(type) << std::endl;
+			std::cout << "[" << lineNum << ":" << linePos << "] " << lexeme << " <- " << LexemeTypeToString(type) << std::endl;
 			needIterate = type != LexemeType::EndOfFile;
 		} while (needIterate);
 	}
