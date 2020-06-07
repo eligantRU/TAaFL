@@ -198,10 +198,9 @@ private:
 		char ch;
 		std::string lexeme;
 		auto wasIterated = false;
-		while (!m_strm.eof() && (m_strm >> ch))
+		while (!m_strm.eof() && GetNextChar(ch))
 		{
 			wasIterated = true;
-			++m_currentPos;
 			if (ch == '#')
 			{
 				ProcessHash();
@@ -239,11 +238,7 @@ private:
 		}
 		if (wasIterated)
 		{
-			m_strm.unget();
-			if (m_currentPos != 0)
-			{
-				--m_currentPos;
-			}
+			PutCharBack();
 		}
 		return lexeme;
 	}
@@ -251,17 +246,12 @@ private:
 	void SkipIgnored()
 	{
 		char ch;
-		while (!m_strm.eof() && (m_strm >> ch))
+		while (!m_strm.eof() && GetNextChar(ch))
 		{
-			++m_currentPos;
 			UpdateCurrentLine(ch);
 			if (!IGNORED_CHARS.count(ch))
 			{
-				if (m_currentPos != 0)
-				{
-					--m_currentPos;
-				}
-				m_strm.unget();
+				PutCharBack();
 				break;
 			}
 		}
@@ -272,13 +262,11 @@ private:
 		std::string lexeme;
 
 		char ch;
-		while (!m_strm.eof() && (m_strm >> ch) && (ch != '"'))
+		while (!m_strm.eof() && GetNextChar(ch) && (ch != '"'))
 		{
-			++m_currentPos;
 			UpdateCurrentLine(ch);
 			lexeme += ch;
 		}
-		++m_currentPos;
 		if (m_strm.eof())
 		{
 			throw EndOfFileException(false);
@@ -291,14 +279,13 @@ private:
 		if (!m_strm.eof())
 		{
 			char ch;
-			if ((m_strm >> ch) && (ch == '='))
+			if (GetNextChar(ch) && (ch == '='))
 			{
-				++m_currentPos;
 				return "==";
 			}
 			else
 			{
-				m_strm.unget();
+				PutCharBack();
 				return "=";
 			}
 		}
@@ -313,14 +300,12 @@ private:
 		}
 		
 		char ch;
-		m_strm >> ch;
-		++m_currentPos;
+		GetNextChar(ch);
 		if (ch != '#')
 		{
 			while (ch != '\n')
 			{
-				m_strm >> ch;
-				++m_currentPos;
+				GetNextChar(ch);
 			}
 			UpdateCurrentLine(ch);
 			return;
@@ -330,8 +315,7 @@ private:
 			char isLastHash = false;
 			while (!m_strm.eof())
 			{
-				m_strm >> ch;
-				++m_currentPos;
+				GetNextChar(ch);
 				UpdateCurrentLine(ch);
 				if (isLastHash && (ch == '#'))
 				{
@@ -349,6 +333,22 @@ private:
 		{
 			++m_currentLine;
 			m_currentPos = 0;
+		}
+	}
+
+	std::istream & GetNextChar(char & ch)
+	{
+		m_strm >> ch;
+		++m_currentPos;
+		return m_strm;
+	}
+
+	void PutCharBack()
+	{
+		m_strm.unget();
+		if (m_currentPos != 0)
+		{
+			--m_currentPos;
 		}
 	}
 
