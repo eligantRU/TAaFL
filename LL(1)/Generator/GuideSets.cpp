@@ -5,16 +5,16 @@
 namespace
 {
 
-std::vector<PairStringBool>::iterator GetIteratorFindIfVector(std::vector<PairStringBool>& vec, std::string str)
+std::vector<PairStringBool>::const_iterator GetIteratorFindIfVector(const std::vector<PairStringBool>& vec, std::string str)
 {
-	return std::find_if(vec.begin(), vec.end(), [&](const PairStringBool& data) {
+	return std::find_if(vec.cbegin(), vec.cend(), [&](const PairStringBool& data) {
 		return data.first == str;
 	});
 }
 
-std::vector<PairStringVectorPair>::iterator GetIteratorFindIfVector(std::vector<PairStringVectorPair>& vec, std::string str)
+std::vector<PairStringVectorPair>::const_iterator GetIteratorFindIfVector(const std::vector<PairStringVectorPair>& vec, std::string str)
 {
-	return std::find_if(vec.begin(), vec.end(), [&](const PairStringVectorPair& data) {
+	return std::find_if(vec.cbegin(), vec.cend(), [&](const PairStringVectorPair& data) {
 		return data.first == str;
 	});
 }
@@ -52,7 +52,7 @@ void FillingData(std::istream& fileInput, std::vector<InputData>& inputDatas, st
 
 						Lexer lexer(strm);
 						const auto [type, lexeme, lineNum, linePos] = lexer.GetLexeme();
-						newStr = LexemeTypeToString(type);
+						newStr = lexeme; // TODO: LexemeTypeToString(type);
 					}
 
 					if (IsCheckUniqueness(terminals, newStr))
@@ -241,9 +241,9 @@ void Forming(const std::vector<InputData>& inputDatas, std::vector<OutputDataGui
 	}
 }
 
-void SearchStartingTerminalsEmptyRules(std::vector<OutputDataGuideSets>& outputDatas,
-	const std::string parentNonterminal, const std::string nonterminal,
-	std::vector<PairStringVectorPair>& transitions, std::vector<PairStringBool>& characters)
+void SearchStartingTerminalsEmptyRules(const std::vector<OutputDataGuideSets>& outputDatas,
+	std::string parentNonterminal, std::string nonterminal,
+	std::vector<PairStringVectorPair>& transitions, const std::vector<PairStringBool>& characters)
 {
 	for (const auto& outputData : outputDatas)
 	{
@@ -255,8 +255,8 @@ void SearchStartingTerminalsEmptyRules(std::vector<OutputDataGuideSets>& outputD
 			size_t size = outputData.terminals.size() - 1;
 			std::string terminal = (distance <= size) ? (distance < size ? outputData.terminals[distance + 1] : outputData.terminals.back()) : NONTERMINAL_END_SEQUENCE;
 
-			size_t row = std::distance(transitions.begin(), GetIteratorFindIfVector(transitions, parentNonterminal));
-			size_t column = std::distance(characters.begin(), GetIteratorFindIfVector(characters, IsEndRule(terminal) ? NONTERMINAL_END_SEQUENCE : terminal));
+			size_t row = std::distance(transitions.cbegin(), GetIteratorFindIfVector(transitions, parentNonterminal));
+			size_t column = std::distance(characters.cbegin(), GetIteratorFindIfVector(characters, IsEndRule(terminal) ? NONTERMINAL_END_SEQUENCE : terminal));
 
 			if ((row < transitions.size()) && (column < characters.size()) && (terminal != parentNonterminal))
 			{
@@ -279,12 +279,12 @@ void SearchStartingTerminalsEmptyRules(std::vector<OutputDataGuideSets>& outputD
 	}
 }
 
-void BuildingFirstRelationship(std::vector<OutputDataGuideSets>& outputDatas, std::vector<PairStringVectorPair>& transitions, std::vector<PairStringBool>& characters)
+void BuildingFirstRelationship(const std::vector<OutputDataGuideSets>& outputDatas, std::vector<PairStringVectorPair>& transitions, const std::vector<PairStringBool>& characters)
 {
 	for (auto& outputData : outputDatas)
 	{
-		size_t row = std::distance(transitions.begin(), GetIteratorFindIfVector(transitions, outputData.nonterminal));
-		size_t column = std::distance(characters.begin(), GetIteratorFindIfVector(characters, outputData.terminals.front()));
+		size_t row = std::distance(transitions.cbegin(), GetIteratorFindIfVector(transitions, outputData.nonterminal));
+		size_t column = std::distance(characters.cbegin(), GetIteratorFindIfVector(characters, outputData.terminals.front()));
 
 		if ((row < transitions.size()) && (column < characters.size()))
 		{
@@ -308,7 +308,7 @@ void BuildingFirstPlusRelationship(std::vector<PairStringVectorPair>& transition
 		{
 			if ((*it).second[j].second)
 			{
-				size_t row = std::distance(transitions.begin(), GetIteratorFindIfVector(transitions, (*it).second[j].first));
+				size_t row = std::distance(transitions.cbegin(), GetIteratorFindIfVector(transitions, (*it).second[j].first));
 
 				for (size_t k = 0; k < transitions[row].second.size(); ++k)
 				{
@@ -322,25 +322,27 @@ void BuildingFirstPlusRelationship(std::vector<PairStringVectorPair>& transition
 	}
 }
 
-void AddingGuideCharacters(std::vector<OutputDataGuideSets>& outputDatas, const std::vector<std::string>& nonterminals, const std::vector<std::string>& terminals)
+void AddingGuideCharacters(std::vector<OutputDataGuideSets>& outputDatas, const std::vector<std::string>& nonterminals, const std::vector<std::string>& terminals, bool bla = true)
 {
 	std::vector<PairStringVectorPair> transitions;
 	std::vector<PairStringBool> characters;
 
-	std::for_each(nonterminals.begin(), nonterminals.end(), [&](const std::string str) { characters.emplace_back(str, false); });
-	std::for_each(terminals.begin(), terminals.end(), [&](const std::string str) { characters.emplace_back(str, false); });
-	std::for_each(nonterminals.begin(), nonterminals.end(), [&](const std::string str) { transitions.emplace_back(str, characters); });
+	std::for_each(nonterminals.begin(), nonterminals.end(), [&](std::string str) { characters.emplace_back(str, false); });
+	std::for_each(terminals.begin(), terminals.end(), [&](std::string str) { characters.emplace_back(str, false); });
+	std::for_each(nonterminals.begin(), nonterminals.end(), [&](std::string str) { transitions.emplace_back(str, characters); });
 
 	BuildingFirstRelationship(outputDatas, transitions, characters);
 	BuildingFirstPlusRelationship(transitions);
 
 	for (auto& outputData : outputDatas)
 	{
-		size_t row = std::distance(transitions.begin(), GetIteratorFindIfVector(transitions, outputData.nonterminal));
+		const auto [left, right, guide] = outputData;
 
-		auto it = std::find_if(outputDatas.begin(), outputDatas.end(), [&](const OutputDataGuideSets& data) {
+		size_t row = std::distance(transitions.cbegin(), GetIteratorFindIfVector(transitions, outputData.nonterminal));
+
+		const auto bla = std::find_if(outputDatas.cbegin(), outputDatas.cend(), [&](const OutputDataGuideSets& data) {
 			return (data.nonterminal == outputData.nonterminal) && IsEmptyRule(data.terminals.front());
-		});
+		}) != outputDatas.cend();
 
 		if (row < transitions.size())
 		{
@@ -357,7 +359,7 @@ void AddingGuideCharacters(std::vector<OutputDataGuideSets>& outputDatas, const 
 
 					if (!str.empty() && (IsNonterminal(firstTerminal) || (firstTerminal == str) || isEmptyRuleFirstTerminal))
 					{
-						if (it != outputDatas.end() && isEmptyRuleStr && !isEmptyRuleFirstTerminal)
+						if (bla && isEmptyRuleStr && !isEmptyRuleFirstTerminal)
 						{
 							continue;
 						}
