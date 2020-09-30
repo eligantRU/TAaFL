@@ -263,7 +263,7 @@ void SearchStartingTerminalsEmptyRules(const std::vector<OutputDataGuideSets>& o
 				transitions[row].second[column].second = true;
 			}
 
-			if ((nonterminal == parentNonterminal) && (outputData.nonterminal != nonterminal))
+			/*if ((nonterminal == parentNonterminal) && (outputData.nonterminal != nonterminal))
 			{
 				for (auto& data : outputDatas)
 				{
@@ -274,7 +274,7 @@ void SearchStartingTerminalsEmptyRules(const std::vector<OutputDataGuideSets>& o
 						SearchStartingTerminalsEmptyRules(outputDatas, parentNonterminal, *it2, transitions, characters);
 					}
 				}
-			}
+			}*/
 		}
 	}
 }
@@ -322,6 +322,84 @@ void BuildingFirstPlusRelationship(std::vector<PairStringVectorPair>& transition
 	}
 }
 
+std::vector<std::string> GetFirst(const std::vector<OutputDataGuideSets> & rules, OutputDataGuideSets processingRule)
+{
+	std::vector<std::string> result;
+
+	const auto processingLeft = processingRule.nonterminal;
+	const auto firstProcessingRight = processingRule.terminals.front();
+	
+	if (IsEmptyRule(firstProcessingRight))
+	{
+		for (const auto& subRule : rules)
+		{
+			if (auto it = std::find_if(subRule.terminals.cbegin(), subRule.terminals.cend(), [&](std::string_view sv) {
+				return sv == processingLeft;
+				}); it != subRule.terminals.cend())
+			{
+				size_t distance = std::distance(subRule.terminals.cbegin(), it);
+				size_t size = subRule.terminals.size() - 1;
+
+				if (const auto bla = (distance <= size)
+					? ((distance < size) ? subRule.terminals[distance + 1] : subRule.terminals.back())
+					: NONTERMINAL_END_SEQUENCE; bla != processingRule.nonterminal)
+				{
+					result.push_back(bla);
+				}
+			}
+		}
+	}
+	else if (IsNonterminal(firstProcessingRight))
+	{
+		for (const auto& rule : rules)
+		{
+			const auto left = rule.nonterminal;
+
+			if (IsNonterminal(firstProcessingRight))
+			{
+				if (left == firstProcessingRight)
+				{
+					const auto bla = GetFirst(rules, rule);
+					result.insert(result.begin(), bla.cbegin(), bla.cend());
+				}
+			}
+		}
+	}
+	else
+	{
+		return { firstProcessingRight };
+	}
+	return result;
+}
+
+std::vector<std::string> GetGuideCharsByRule(const std::vector<OutputDataGuideSets> & rules, OutputDataGuideSets processingRule)
+{
+	std::vector<std::string> result = GetFirst(rules, processingRule);
+	
+	std::vector<std::string> terminals;
+	std::vector<std::string> nonTerminals;
+
+	auto it = std::partition(result.begin(), result.end(), [](const std::string& sv) {
+		return IsNonterminal(sv);
+	});
+	std::copy(result.begin(), it, std::back_inserter(nonTerminals));
+	std::copy(it, result.end(), std::back_inserter(terminals));
+	result = terminals;
+
+	for (const auto & nonTerminal : nonTerminals)
+	{
+		for (const auto & rule : rules)
+		{
+			if (rule.nonterminal == nonTerminal)
+			{
+				const auto bla = GetGuideCharsByRule(rules, rule);
+				std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
+			}
+		}
+	}
+	return result;
+};
+
 void AddingGuideCharacters(std::vector<OutputDataGuideSets>& outputDatas, const std::vector<std::string>& nonterminals, const std::vector<std::string>& terminals, bool bla = true)
 {
 	std::vector<PairStringVectorPair> transitions;
@@ -334,43 +412,9 @@ void AddingGuideCharacters(std::vector<OutputDataGuideSets>& outputDatas, const 
 	BuildingFirstRelationship(outputDatas, transitions, characters);
 	BuildingFirstPlusRelationship(transitions);
 
-	for (auto& outputData : outputDatas)
+	for (auto & outputData : outputDatas)
 	{
-		const auto [left, right, guide] = outputData;
-
-		size_t row = std::distance(transitions.cbegin(), GetIteratorFindIfVector(transitions, outputData.nonterminal));
-
-		const auto bla = std::find_if(outputDatas.cbegin(), outputDatas.cend(), [&](const OutputDataGuideSets& data) {
-			return (data.nonterminal == outputData.nonterminal) && IsEmptyRule(data.terminals.front());
-		}) != outputDatas.cend();
-
-		if (row < transitions.size())
-		{
-			std::vector<std::string> guideCharacters;
-			std::string firstTerminal = outputData.terminals.front();
-
-			for (size_t i = nonterminals.size(); i < transitions[row].second.size(); ++i)
-			{
-				if (transitions[row].second[i].second)
-				{
-					std::string str = transitions[row].second[i].first;
-					bool isEmptyRuleFirstTerminal = IsEmptyRule(firstTerminal);
-					bool isEmptyRuleStr = IsEmptyRule(str);
-
-					if (!str.empty() && (IsNonterminal(firstTerminal) || (firstTerminal == str) || isEmptyRuleFirstTerminal))
-					{
-						if (bla && isEmptyRuleStr && !isEmptyRuleFirstTerminal)
-						{
-							continue;
-						}
-
-						guideCharacters.push_back(isEmptyRuleStr ? TERMINAL_END_SEQUENCE : str);
-						transitions[row].second[i].first = "";
-					}
-				}
-			}
-			outputData.guideCharacters = guideCharacters;
-		}
+		outputData.guideCharacters = GetGuideCharsByRule(outputDatas, outputData);
 	}
 }
 
