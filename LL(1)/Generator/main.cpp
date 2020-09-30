@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
 	
 		std::ofstream guideSetsOut("output_guideSets.txt");
 		PrintResultGuideSets(guideSetsOut, outputDatasSets);
+		ValidateGuideCharacters(outputDatasSets);
 
 		std::vector<OutputData> outputDatas = GetGenerateData(outputDatasSets);
 		PrintResult(output, outputDatas);

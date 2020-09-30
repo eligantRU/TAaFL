@@ -5,6 +5,13 @@
 namespace
 {
 
+template <class T>
+T Uniqify(const T & c)
+{
+	std::set bla(c.cbegin(), c.cend());
+	return { bla.cbegin(), bla.cend() };
+}
+
 std::vector<PairStringBool>::const_iterator GetIteratorFindIfVector(const std::vector<PairStringBool>& vec, std::string str)
 {
 	return std::find_if(vec.cbegin(), vec.cend(), [&](const PairStringBool& data) {
@@ -19,6 +26,33 @@ std::vector<PairStringVectorPair>::const_iterator GetIteratorFindIfVector(const 
 	});
 }
 
+}
+
+void ValidateGuideCharacters(const std::vector<OutputDataGuideSets>& outputDatas)
+{
+	for (size_t i = 0; i < outputDatas.size(); ++i)
+	{
+		auto lhs = outputDatas[i].guideCharacters;
+
+		for (size_t j = 0; j < outputDatas.size(); ++j)
+		{
+			auto rhs = outputDatas[j].guideCharacters;
+			if ((i == j) || (outputDatas[i].nonterminal != outputDatas[j].nonterminal))
+			{
+				continue;
+			}
+
+			std::vector<std::string> intersection;
+
+			std::sort(lhs.begin(), lhs.end());
+			std::sort(rhs.begin(), rhs.end());
+			std::set_intersection(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend(), std::back_inserter(intersection));
+			if (!intersection.empty())
+			{
+				throw std::exception("Guide characters intersection");
+			}
+		}
+	}
 }
 
 void FillingData(std::istream& fileInput, std::vector<InputData>& inputDatas, std::vector<std::string>& nonterminals, std::vector<std::string>& terminals)
@@ -262,19 +296,6 @@ void SearchStartingTerminalsEmptyRules(const std::vector<OutputDataGuideSets>& o
 			{
 				transitions[row].second[column].second = true;
 			}
-
-			/*if ((nonterminal == parentNonterminal) && (outputData.nonterminal != nonterminal))
-			{
-				for (auto& data : outputDatas)
-				{
-					if (auto it2 = std::find_if(data.terminals.begin(), data.terminals.end(), [&](const std::string& str) {
-							return str == outputData.nonterminal;
-						}); it2 != data.terminals.end())
-					{
-						SearchStartingTerminalsEmptyRules(outputDatas, parentNonterminal, *it2, transitions, characters);
-					}
-				}
-			}*/
 		}
 	}
 }
@@ -369,15 +390,15 @@ std::vector<std::string> GetFirst(const std::vector<OutputDataGuideSets> & rules
 	{
 		return { firstProcessingRight };
 	}
-	return result;
+	return Uniqify(result);
 }
 
 std::vector<std::string> GetGuideCharsByRule(const std::vector<OutputDataGuideSets> & rules, OutputDataGuideSets processingRule)
 {
-	std::vector<std::string> result = GetFirst(rules, processingRule);
-	
-	std::vector<std::string> terminals;
-	std::vector<std::string> nonTerminals;
+	auto result = GetFirst(rules, processingRule);
+
+	decltype(result) terminals;
+	decltype(result) nonTerminals;
 
 	auto it = std::partition(result.begin(), result.end(), [](const std::string& sv) {
 		return IsNonterminal(sv);
@@ -397,7 +418,7 @@ std::vector<std::string> GetGuideCharsByRule(const std::vector<OutputDataGuideSe
 			}
 		}
 	}
-	return result;
+	return Uniqify(result);
 };
 
 void AddingGuideCharacters(std::vector<OutputDataGuideSets>& outputDatas, const std::vector<std::string>& nonterminals, const std::vector<std::string>& terminals, bool bla = true)
