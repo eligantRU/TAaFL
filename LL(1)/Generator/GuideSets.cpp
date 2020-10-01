@@ -28,6 +28,17 @@ std::vector<PairStringVectorPair>::const_iterator GetIteratorFindIfVector(const 
 
 }
 
+void ValidateTransitions(const std::vector<PairStringVectorPair> & transitions)
+{
+	for (const auto & [from, to] : transitions)
+	{
+		if (const auto it = std::find(to.cbegin(), to.cend(), std::make_pair(from, true)); it != to.cend())
+		{
+			throw std::exception("Left recursion");
+		}
+	}
+}
+
 void ValidateGuideCharacters(const std::vector<OutputDataGuideSets>& outputDatas)
 {
 	for (size_t i = 0; i < outputDatas.size(); ++i)
@@ -343,6 +354,34 @@ void BuildingFirstPlusRelationship(std::vector<PairStringVectorPair>& transition
 	}
 }
 
+std::vector<std::string> GetFollow(const std::vector<OutputDataGuideSets>& rules, std::string nonTerminal)
+{
+	std::vector<std::string> result;
+	for (const auto& subRule : rules)
+	{
+		if (auto it = std::find_if(subRule.terminals.cbegin(), subRule.terminals.cend(), [&](std::string_view sv) {
+			return sv == nonTerminal;
+			}); it != subRule.terminals.cend())
+		{
+			size_t distance = std::distance(subRule.terminals.cbegin(), it);
+			size_t size = subRule.terminals.size() - 1;
+
+			if (const auto bla = (distance <= size)
+				? ((distance < size) ? subRule.terminals[distance + 1] : subRule.terminals.back())
+				: NONTERMINAL_END_SEQUENCE; bla != nonTerminal)
+			{
+				result.push_back(bla);
+			}
+			else if (subRule.nonterminal != nonTerminal)
+			{
+				const auto tmp = GetFollow(rules, subRule.nonterminal);
+				std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(result));
+			}
+		}
+	}
+	return Uniqify(result);
+}
+
 std::vector<std::string> GetFirst(const std::vector<OutputDataGuideSets> & rules, OutputDataGuideSets processingRule)
 {
 	std::vector<std::string> result;
@@ -354,31 +393,17 @@ std::vector<std::string> GetFirst(const std::vector<OutputDataGuideSets> & rules
 	{
 		for (const auto& subRule : rules)
 		{
-			if (auto it = std::find_if(subRule.terminals.cbegin(), subRule.terminals.cend(), [&](std::string_view sv) {
-				return sv == processingLeft;
-				}); it != subRule.terminals.cend())
-			{
-				size_t distance = std::distance(subRule.terminals.cbegin(), it);
-				size_t size = subRule.terminals.size() - 1;
-
-				if (const auto bla = (distance <= size)
-					? ((distance < size) ? subRule.terminals[distance + 1] : subRule.terminals.back())
-					: NONTERMINAL_END_SEQUENCE; bla != processingRule.nonterminal)
-				{
-					result.push_back(bla);
-				}
-			}
+			const auto bla = GetFollow(rules, processingLeft);
+			std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
 		}
 	}
 	else if (IsNonterminal(firstProcessingRight))
 	{
 		for (const auto& rule : rules)
 		{
-			const auto left = rule.nonterminal;
-
 			if (IsNonterminal(firstProcessingRight))
 			{
-				if (left == firstProcessingRight)
+				if (rule.nonterminal == firstProcessingRight)
 				{
 					const auto bla = GetFirst(rules, rule);
 					result.insert(result.begin(), bla.cbegin(), bla.cend());
@@ -388,7 +413,7 @@ std::vector<std::string> GetFirst(const std::vector<OutputDataGuideSets> & rules
 	}
 	else
 	{
-		return { firstProcessingRight };
+		result = { firstProcessingRight };
 	}
 	return Uniqify(result);
 }
@@ -421,7 +446,8 @@ std::vector<std::string> GetGuideCharsByRule(const std::vector<OutputDataGuideSe
 	return Uniqify(result);
 };
 
-void AddingGuideCharacters(std::vector<OutputDataGuideSets>& outputDatas, const std::vector<std::string>& nonterminals, const std::vector<std::string>& terminals, bool bla = true)
+void AddingGuideCharacters(std::vector<OutputDataGuideSets>& outputDatas,
+	const std::vector<std::string>& nonterminals, const std::vector<std::string>& terminals)
 {
 	std::vector<PairStringVectorPair> transitions;
 	std::vector<PairStringBool> characters;
@@ -432,6 +458,7 @@ void AddingGuideCharacters(std::vector<OutputDataGuideSets>& outputDatas, const 
 
 	BuildingFirstRelationship(outputDatas, transitions, characters);
 	BuildingFirstPlusRelationship(transitions);
+	ValidateTransitions(transitions);
 
 	for (auto & outputData : outputDatas)
 	{
