@@ -391,11 +391,8 @@ std::vector<std::string> GetFirst(const std::vector<OutputDataGuideSets> & rules
 	
 	if (IsEmptyRule(firstProcessingRight))
 	{
-		for (const auto& subRule : rules)
-		{
-			const auto bla = GetFollow(rules, processingLeft);
-			std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
-		}
+		const auto bla = GetFollow(rules, processingLeft);
+		std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
 	}
 	else if (IsNonterminal(firstProcessingRight))
 	{
@@ -406,7 +403,7 @@ std::vector<std::string> GetFirst(const std::vector<OutputDataGuideSets> & rules
 				if (rule.nonterminal == firstProcessingRight)
 				{
 					const auto bla = GetFirst(rules, rule);
-					result.insert(result.begin(), bla.cbegin(), bla.cend());
+					std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
 				}
 			}
 		}
