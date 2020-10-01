@@ -354,7 +354,7 @@ void BuildingFirstPlusRelationship(std::vector<PairStringVectorPair>& transition
 	}
 }
 
-std::vector<std::string> GetFollow(const std::vector<OutputDataGuideSets>& rules, std::string nonTerminal)
+std::vector<std::string> GetFollow(const std::vector<OutputDataGuideSets>& rules, std::string nonTerminal, std::set<std::string> way = {})
 {
 	std::vector<std::string> result;
 	for (const auto& subRule : rules)
@@ -372,9 +372,11 @@ std::vector<std::string> GetFollow(const std::vector<OutputDataGuideSets>& rules
 			{
 				result.push_back(bla);
 			}
-			else if (subRule.nonterminal != nonTerminal)
+			else if (!way.count(subRule.nonterminal))
 			{
-				const auto tmp = GetFollow(rules, subRule.nonterminal);
+				auto tmpWay(way);
+				tmpWay.insert(subRule.nonterminal);
+				const auto tmp = GetFollow(rules, subRule.nonterminal, tmpWay);
 				std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(result));
 			}
 		}
