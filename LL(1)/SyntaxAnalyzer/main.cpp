@@ -44,6 +44,7 @@ int main(int argc, char* argv[])
 		std::vector<OutputTableData> tableOut;
 
 		std::vector<Lexeme> lexemes = GetAllLexemes(sentence);
+		lexemes.erase(lexemes.end() - 1); // TODO:
 		
 		InitInputTable(table, tableIn);
 		MakeProcess(tableIn, tableOut, lexemes);

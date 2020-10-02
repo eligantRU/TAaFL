@@ -194,7 +194,9 @@ void RecursiveMethod(std::vector<InputTableData>& inputTable, std::vector<Output
 		isEnd = true;
 	}
 
-	std::string currentSymbol = lexemes[index].lexeme; // TODO: LexemeTypeToString(lexemes[index].type);
+	// TODO:
+	// std::string currentSymbol = LexemeTypeToString(lexemes[index].type);
+	std::string currentSymbol = lexemes[index].lexeme;
 
 	if (inputData.isStack)
 	{
@@ -242,7 +244,9 @@ void MakeProcess(std::vector<InputTableData>& inputTable, std::vector<OutputTabl
 	std::stack<size_t> stack;
 	size_t index = 0;
 
-	InputTableData resut = GetInputDataBySymbolAndCurrentSymbol(inputTable, inputTable.front().symbol, lexemes.front().lexeme); // TODO: LexemeTypeToString(lexemes.front().type)
+	// TODO:
+	// InputTableData resut = GetInputDataBySymbolAndCurrentSymbol(inputTable, inputTable.front().symbol, LexemeTypeToString(lexemes.front().type));
+	InputTableData resut = GetInputDataBySymbolAndCurrentSymbol(inputTable, inputTable.front().symbol, lexemes.front().lexeme);
 	RecursiveMethod(inputTable, outputTable, stack, resut, lexemes, index, false);
 
 	std::cout << "Stack is empty. Well done!" << std::endl;

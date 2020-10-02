@@ -97,7 +97,9 @@ void FillingData(std::istream& fileInput, std::vector<InputData>& inputDatas, st
 
 						Lexer lexer(strm);
 						const auto [type, lexeme, lineNum, linePos] = lexer.GetLexeme();
-						newStr = lexeme; // TODO: LexemeTypeToString(type);
+						// TODO:
+						// newStr = LexemeTypeToString(type);
+						newStr = lexeme;
 					}
 
 					if (IsCheckUniqueness(terminals, newStr))
