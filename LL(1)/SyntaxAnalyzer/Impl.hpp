@@ -38,7 +38,7 @@ struct OutputTableData
 using PairStringString = std::pair<std::string, std::string>;
 
 const std::string TAB = "\t";
-const std::string END_CHAIN = "#";
+const std::string END_CHAIN = "$";
 
 std::string ActionToString(Action action)
 {
@@ -252,13 +252,13 @@ void MakeProcess(std::vector<InputTableData>& inputTable, std::vector<OutputTabl
 	std::cout << "Stack is empty. Well done!" << std::endl;
 }
 
-void PrintResult(std::ofstream& fileOutput, const std::vector<OutputTableData>& outputTable)
+void PrintResult(std::ostream& output, const std::vector<OutputTableData>& outputTable)
 {
-	fileOutput << "Number" << TAB << "Action" << TAB << "Stack" << TAB << "CurrentSymbol" << std::endl;
+	output << "Number" << TAB << "Action" << TAB << "Stack" << TAB << "CurrentSymbol" << std::endl;
 
 	for (size_t i = 0; i < outputTable.size(); ++i)
 	{
 		OutputTableData outputData = outputTable[i];
-		fileOutput << outputData.number << TAB << ActionToString(outputData.action) << TAB << outputData.stackItem << TAB << outputData.currentSymbol << std::endl;
+		output << outputData.number << TAB << ActionToString(outputData.action) << TAB << outputData.stackItem << TAB << outputData.currentSymbol << std::endl;
 	}
 }
