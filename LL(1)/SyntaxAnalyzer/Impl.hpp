@@ -163,6 +163,8 @@ InputTableData GetNewInputData(std::vector<InputTableData>& inputTable, std::str
 
 	if (isEnd && !result.isError)
 	{
+		// TODO:
+		// str = LexemeTypeToString(LexemeType::EndOfFile);
 		str = END_CHAIN;
 	}
 

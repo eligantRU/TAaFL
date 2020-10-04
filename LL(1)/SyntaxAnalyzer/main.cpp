@@ -44,9 +44,13 @@ int main(int argc, char* argv[])
 		std::vector<OutputTableData> tableOut;
 
 		std::vector<Lexeme> lexemes = GetAllLexemes(sentence);
-		// TODO:
-		lexemes.erase(lexemes.end() - 1);
-		lexemes.push_back({ LexemeType::EndOfFile, END_CHAIN, 0, 0 });
+		if (!lexemes.empty()) // TODO:
+		{
+			if (auto& last = lexemes.back(); last.type == LexemeType::EndOfFile)
+			{
+				last.lexeme = END_CHAIN;
+			}
+		}
 		
 		InitInputTable(table, tableIn);
 		MakeProcess(tableIn, tableOut, lexemes);
