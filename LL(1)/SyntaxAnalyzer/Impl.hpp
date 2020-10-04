@@ -249,6 +249,11 @@ void MakeProcess(std::vector<InputTableData>& inputTable, std::vector<OutputTabl
 	InputTableData resut = GetInputDataBySymbolAndCurrentSymbol(inputTable, inputTable.front().symbol, lexemes.front().lexeme);
 	RecursiveMethod(inputTable, outputTable, stack, resut, lexemes, index, false);
 
+	if (index != (lexemes.size() - 1))
+	{
+		throw std::exception("Unprocessed lexemes in sentence");
+	}
+
 	std::cout << "Stack is empty. Well done!" << std::endl;
 }
 
