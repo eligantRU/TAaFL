@@ -137,7 +137,9 @@ bool HaveSymbolInGuide(const std::vector<std::string>& guideCharacters, const st
 InputTableData GetInputDataBySymbolAndCurrentSymbol(std::vector<InputTableData>& inputTable, const std::string symbol, const std::string currentSymbol)
 {
 	auto it = std::find_if(inputTable.begin(), inputTable.end(), [&](const InputTableData& data) {
-		return data.symbol == symbol && (HaveSymbolInGuide(data.guideCharacters, currentSymbol) || HaveSymbolInGuide(data.guideCharacters, END_CHAIN));
+		// TODO: uncomment in case of emergency
+		return (data.symbol == symbol) && HaveSymbolInGuide(data.guideCharacters, currentSymbol);
+		// return (data.symbol == symbol) && (HaveSymbolInGuide(data.guideCharacters, currentSymbol) || HaveSymbolInGuide(data.guideCharacters, END_CHAIN));
 	});
 
 	if (it == inputTable.end())
