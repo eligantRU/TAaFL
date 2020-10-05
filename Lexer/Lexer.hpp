@@ -10,21 +10,47 @@
 
 enum class LexemeType
 {
-	DataType,
-	ReservedIdentifier,
-	KeyWord,
+	VoidType,
+	StringType,
+	DoubleType,
+	IntType,
+	BoolType,
+
+	MainIdentifier,
+	PrintIdentifier,
+	ReadIdentifier,
 	Identifier,
+
+	WhileKeyWord,
+	BreakKeyWord,
+	ContinueKeyWord,
+	IfKeyWord,
+	ElseKeyWord,
+	ReturnKeyWord,
+
 	LeftSquareBracket,
 	RightSquareBracket,
 	LeftCurlyBracket,
 	RightCurlyBracket,
 	OpenParenthesis,
 	CloseParenthesis,
-	LogicalOperation,
-	MathOperation,
+	
+	PlusOperator,
+	MinusOperator,
+	MultOperator,
+	DivOperator,
+
+	EqualOperator,
+	ConjunctionOperator,
+	DisjunctionOperator,
+	LessOperator,
+	GreaterOperator,
+	NotOperator,
+
 	StringValue,
 	NumberValue,
 	BooleanValue,
+
 	AssignmentOperator,
 	Semicolon,
 	Comma,
@@ -48,12 +74,6 @@ const std::unordered_set<char> SEPARATORS = {
 	' ', '\t', '\n', ';', ',', '{', '}', '(', ')', '[', ']', '=', '<', '>', '!', '/', '*', '+', '-', '"', '#'
 };
 
-const std::unordered_set<std::string> DATA_TYPES = { "void", "string", "double", "int", "bool" };
-const std::unordered_set<std::string> RESERVED_IDENTIFIERS = { "main", "print", "read" };
-const std::unordered_set<std::string> KEY_WORDS = { "while", "break", "continue", "if", "else", "return" };
-const std::unordered_set<std::string> LOGICAL_OPERATIONS = { "==", "&&", "||", "<", ">", "!" };
-const std::unordered_set<std::string> MATH_OPERATIONS = { "+", "-", "*", "/" };
-
 bool IsNumber(const std::string & lexeme)
 {
 	return std::regex_match(lexeme, std::regex("[-+]?\\d+"))
@@ -71,11 +91,35 @@ bool IsIdentifier(const std::string & lexeme)
 
 LexemeType ClassifyLexeme(const std::string & lexeme)
 {
-	if (DATA_TYPES.count(lexeme)) return LexemeType::DataType;
-	if (RESERVED_IDENTIFIERS.count(lexeme)) return LexemeType::ReservedIdentifier;
-	if (MATH_OPERATIONS.count(lexeme)) return LexemeType::MathOperation;
-	if (LOGICAL_OPERATIONS.count(lexeme)) return LexemeType::LogicalOperation;
-	if (KEY_WORDS.count(lexeme)) return LexemeType::KeyWord;
+	if (lexeme == "void") return LexemeType::VoidType;
+	if (lexeme == "string") return LexemeType::StringType;
+	if (lexeme == "double") return LexemeType::DoubleType;
+	if (lexeme == "int") return LexemeType::IntType;
+	if (lexeme == "bool") return LexemeType::BoolType;
+
+	if (lexeme == "main") return LexemeType::MainIdentifier;
+	if (lexeme == "print") return LexemeType::PrintIdentifier;
+	if (lexeme == "read") return LexemeType::ReadIdentifier;
+
+	if (lexeme == "+") return LexemeType::PlusOperator;
+	if (lexeme == "-") return LexemeType::MinusOperator;
+	if (lexeme == "*") return LexemeType::MultOperator;
+	if (lexeme == "/") return LexemeType::DivOperator;
+	
+	if (lexeme == "==") return LexemeType::EqualOperator;
+	if (lexeme == "&&") return LexemeType::ConjunctionOperator;
+	if (lexeme == "||") return LexemeType::DisjunctionOperator;
+	if (lexeme == "<") return LexemeType::LessOperator;
+	if (lexeme == ">") return LexemeType::GreaterOperator;
+	if (lexeme == "!") return LexemeType::NotOperator;
+
+	if (lexeme == "while") return LexemeType::WhileKeyWord;
+	if (lexeme == "break") return LexemeType::BreakKeyWord;
+	if (lexeme == "continue") return LexemeType::ContinueKeyWord;
+	if (lexeme == "if") return LexemeType::IfKeyWord;
+	if (lexeme == "else") return LexemeType::ElseKeyWord;
+	if (lexeme == "return") return LexemeType::ReturnKeyWord;
+
 	if (lexeme == "=") return LexemeType::AssignmentOperator;
 	if (lexeme == "(") return LexemeType::OpenParenthesis;
 	if (lexeme == ")") return LexemeType::CloseParenthesis;
@@ -96,14 +140,39 @@ std::string LexemeTypeToString(LexemeType type)
 {
 	switch (type)
 	{
-	case LexemeType::DataType:
-		return "DataType";
-	case LexemeType::ReservedIdentifier:
-		return "ReservedIdentifier";
-	case LexemeType::KeyWord:
-		return "KeyWord";
+	case LexemeType::VoidType:
+		return "VoidType";
+	case LexemeType::StringType:
+		return "StringType";
+	case LexemeType::DoubleType:
+		return "DoubleType";
+	case LexemeType::IntType:
+		return "IntType";
+	case LexemeType::BoolType:
+		return "BoolType";
+
+	case LexemeType::MainIdentifier:
+		return "MainIdentifier";
+	case LexemeType::PrintIdentifier:
+		return "PrintIdentifier";
+	case LexemeType::ReadIdentifier:
+		return "ReadIdentifier";
 	case LexemeType::Identifier:
 		return "Identifier";
+
+	case LexemeType::WhileKeyWord:
+		return "WhileKeyWord"; 
+	case LexemeType::BreakKeyWord:
+		return "BreakKeyWord"; 
+	case LexemeType::ContinueKeyWord:
+		return "ContinueKeyWord"; 
+	case LexemeType::IfKeyWord:
+		return "IfKeyWord"; 
+	case LexemeType::ElseKeyWord:
+		return "ElseKeyWord"; 
+	case LexemeType::ReturnKeyWord:
+		return "ReturnKeyWord"; 
+
 	case LexemeType::LeftSquareBracket:
 		return "LeftSquareBracket";
 	case LexemeType::RightSquareBracket:
@@ -116,16 +185,36 @@ std::string LexemeTypeToString(LexemeType type)
 		return "OpenParenthesis";
 	case LexemeType::CloseParenthesis:
 		return "CloseParenthesis";
-	case LexemeType::LogicalOperation:
-		return "LogicalOperation";
-	case LexemeType::MathOperation:
-		return "MathOperation";
+
+	case LexemeType::PlusOperator:
+		return "PlusOperator";
+	case LexemeType::MinusOperator:
+		return "MinusOperator";
+	case LexemeType::MultOperator:
+		return "MultOperator";
+	case LexemeType::DivOperator:
+		return "DivOperator";
+
+	case LexemeType::EqualOperator:
+		return "EqualOperator";
+	case LexemeType::ConjunctionOperator:
+		return "ConjunctionOperator";
+	case LexemeType::DisjunctionOperator:
+		return "DisjunctionOperator";
+	case LexemeType::LessOperator:
+		return "LessOperator";
+	case LexemeType::GreaterOperator:
+		return "GreaterOperator";
+	case LexemeType::NotOperator:
+		return "NotOperator";
+
 	case LexemeType::StringValue:
 		return "StringValue";
 	case LexemeType::NumberValue:
 		return "NumberValue";
 	case LexemeType::BooleanValue:
 		return "BooleanValue";
+
 	case LexemeType::AssignmentOperator:
 		return "AssignmentOperator";
 	case LexemeType::Semicolon:
