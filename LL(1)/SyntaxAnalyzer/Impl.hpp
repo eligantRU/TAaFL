@@ -40,6 +40,15 @@ using PairStringString = std::pair<std::string, std::string>;
 const std::string TAB = "\t";
 const std::string END_CHAIN = "$";
 
+std::string PrecariousLexemeTypeToString(LexemeType type)
+{
+	if (type == LexemeType::EndOfFile)
+	{
+		return END_CHAIN;
+	}
+	return LexemeTypeToString(type);
+}
+
 std::string ActionToString(Action action)
 {
 	switch (action)
@@ -166,8 +175,8 @@ InputTableData GetNewInputData(std::vector<InputTableData>& inputTable, std::str
 	if (isEnd && !result.isError)
 	{
 		// TODO:
-		// str = LexemeTypeToString(LexemeType::EndOfFile);
-		str = END_CHAIN;
+		str = PrecariousLexemeTypeToString(LexemeType::EndOfFile);
+		// str = END_CHAIN;
 	}
 
 	if (!HaveSymbolInGuide(result.guideCharacters, str) && result.pointer != 0)
@@ -199,8 +208,8 @@ void RecursiveMethod(std::vector<InputTableData>& inputTable, std::vector<Output
 	}
 
 	// TODO:
-	// std::string currentSymbol = LexemeTypeToString(lexemes[index].type);
-	std::string currentSymbol = lexemes[index].lexeme;
+	std::string currentSymbol = PrecariousLexemeTypeToString(lexemes[index].type);
+	// std::string currentSymbol = lexemes[index].lexeme;
 
 	if (inputData.isStack)
 	{
@@ -249,8 +258,8 @@ void MakeProcess(std::vector<InputTableData>& inputTable, std::vector<OutputTabl
 	size_t index = 0;
 
 	// TODO:
-	// InputTableData resut = GetInputDataBySymbolAndCurrentSymbol(inputTable, inputTable.front().symbol, LexemeTypeToString(lexemes.front().type));
-	InputTableData resut = GetInputDataBySymbolAndCurrentSymbol(inputTable, inputTable.front().symbol, lexemes.front().lexeme);
+	InputTableData resut = GetInputDataBySymbolAndCurrentSymbol(inputTable, inputTable.front().symbol, PrecariousLexemeTypeToString(lexemes.front().type));
+	// InputTableData resut = GetInputDataBySymbolAndCurrentSymbol(inputTable, inputTable.front().symbol, lexemes.front().lexeme);
 	RecursiveMethod(inputTable, outputTable, stack, resut, lexemes, index, false);
 
 	if (index != (lexemes.size() - 1))

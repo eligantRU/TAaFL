@@ -98,8 +98,8 @@ void FillingData(std::istream& fileInput, std::vector<InputData>& inputDatas, st
 						Lexer lexer(strm);
 						const auto [type, lexeme, lineNum, linePos] = lexer.GetLexeme();
 						// TODO:
-						// newStr = LexemeTypeToString(type);
-						newStr = lexeme;
+						newStr = LexemeTypeToString(type);
+						// newStr = lexeme;
 					}
 
 					if (IsCheckUniqueness(terminals, newStr))
@@ -373,6 +373,14 @@ std::vector<std::string> GetFollow(const std::vector<OutputDataGuideSets>& rules
 				: NONTERMINAL_END_SEQUENCE; bla != nonTerminal)
 			{
 				result.push_back(bla);
+
+				if ((bla == TERMINAL_END_SEQUENCE) && !way.count(subRule.nonterminal)) // TODO: copy-paste
+				{
+					auto tmpWay(way);
+					tmpWay.insert(subRule.nonterminal);
+					const auto tmp = GetFollow(rules, subRule.nonterminal, tmpWay);
+					std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(result));
+				}
 			}
 			else if (!way.count(subRule.nonterminal))
 			{
