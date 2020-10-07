@@ -121,10 +121,8 @@ void InitInputTable(std::ifstream& fileTableInput, std::vector<InputTableData>& 
 	while (std::getline(fileTableInput, line))
 	{
 		std::istringstream iss(line);
-		std::string str;
 
 		InputTableData inputData;
-
 		inputData.number = ParseNumber(GetString(iss));
 		inputData.isShift = InitBoolVariable(iss);
 		inputData.isError = InitBoolVariable(iss);
@@ -143,51 +141,40 @@ bool HaveSymbolInGuide(const std::vector<std::string>& guideCharacters, const st
 	return std::find(guideCharacters.begin(), guideCharacters.end(), symbol) != guideCharacters.end();
 }
 
-InputTableData GetInputDataBySymbolAndCurrentSymbol(std::vector<InputTableData>& inputTable, const std::string symbol, const std::string currentSymbol)
+InputTableData GetInputDataBySymbolAndCurrentSymbol(const std::vector<InputTableData>& inputTable, std::string symbol, std::string currentSymbol)
 {
-	auto it = std::find_if(inputTable.begin(), inputTable.end(), [&](const InputTableData& data) {
-		// TODO: uncomment in case of emergency
-		return (data.symbol == symbol) && HaveSymbolInGuide(data.guideCharacters, currentSymbol);
-		// return (data.symbol == symbol) && (HaveSymbolInGuide(data.guideCharacters, currentSymbol) || HaveSymbolInGuide(data.guideCharacters, END_CHAIN));
-	});
-
-	if (it == inputTable.end())
+	if (auto it = std::find_if(inputTable.cbegin(), inputTable.cend(), [&](const InputTableData& data) { // TODO: uncomment in case of emergency
+			return (data.symbol == symbol) && HaveSymbolInGuide(data.guideCharacters, currentSymbol);
+			// return (data.symbol == symbol) && (HaveSymbolInGuide(data.guideCharacters, currentSymbol) || HaveSymbolInGuide(data.guideCharacters, END_CHAIN));
+		}); it != inputTable.cend())
 	{
-		throw std::invalid_argument("Error. Wrong character: " + currentSymbol);
+		return *it;
 	}
-
-	return *it;
+	throw std::invalid_argument("Error. Wrong character: " + currentSymbol);
 }
 
-InputTableData GetNewInputData(std::vector<InputTableData>& inputTable, std::string currentSymbol, size_t pointer, bool isEnd)
+InputTableData GetNewInputData(const std::vector<InputTableData>& inputTable, std::string currentSymbol, size_t pointer, bool isEnd)
 {
-	auto it = std::find_if(inputTable.begin(), inputTable.end(), [&](const InputTableData& data) { return data.number == pointer; });
-
-	if (it == inputTable.end())
+	if (auto it = std::find_if(inputTable.cbegin(), inputTable.cend(), [&](const InputTableData& data) {
+			return data.number == pointer;
+		}); it != inputTable.cend())
 	{
-		throw std::exception("Error. Not find in input table number");
-	}
+		InputTableData result = *it;
 
-	InputTableData result = *it;
-
-	std::string str = currentSymbol;
-
-	if (isEnd && !result.isError)
-	{
 		// TODO:
-		str = PrecariousLexemeTypeToString(LexemeType::EndOfFile);
-		// str = END_CHAIN;
-	}
+		std::string str = (isEnd && !result.isError) ? PrecariousLexemeTypeToString(LexemeType::EndOfFile) : currentSymbol;
+		// std::string str = (isEnd && !result.isError) ? END_CHAIN : currentSymbol;
 
-	if (!HaveSymbolInGuide(result.guideCharacters, str) && result.pointer != 0)
-	{
-		result = GetInputDataBySymbolAndCurrentSymbol(inputTable, result.symbol, str);
+		if (!HaveSymbolInGuide(result.guideCharacters, str) && result.pointer != 0)
+		{
+			result = GetInputDataBySymbolAndCurrentSymbol(inputTable, result.symbol, str);
+		}
+		return result;
 	}
-
-	return result;
+	throw std::exception("Error. Not find in input table number");
 }
 
-void RecursiveMethod(std::vector<InputTableData>& inputTable, std::vector<OutputTableData>& outputTable, std::stack<size_t>& stack,
+void RecursiveMethod(const std::vector<InputTableData>& inputTable, std::vector<OutputTableData>& outputTable, std::stack<size_t>& stack,
 	const InputTableData& inputData, const std::vector<Lexeme>& lexemes, size_t& index, bool isEnd)
 {
 	if (inputData.isEnd && stack.empty())
@@ -214,9 +201,7 @@ void RecursiveMethod(std::vector<InputTableData>& inputTable, std::vector<Output
 	if (inputData.isStack)
 	{
 		size_t stackItem = inputData.number + 1;
-
 		outputTable.push_back({ inputData.number, Action::Add, stackItem, currentSymbol });
-
 		stack.push(stackItem);
 
 		InputTableData newInputData = GetNewInputData(inputTable, currentSymbol, inputData.pointer, isEnd);
@@ -233,7 +218,6 @@ void RecursiveMethod(std::vector<InputTableData>& inputTable, std::vector<Output
 
 			size_t pointer = stack.top();
 			stack.pop();
-
 			outputTable.push_back({ inputData.number, Action::Delete, pointer, currentSymbol });
 
 			InputTableData newInputData = GetNewInputData(inputTable, currentSymbol, pointer, isEnd);
