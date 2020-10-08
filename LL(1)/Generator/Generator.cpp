@@ -47,6 +47,7 @@ std::vector<OutputData> GetGenerateData(const std::vector<OutputDataGuideSets>& 
 			if (IsEndRule(outputData.symbol))
 			{
 				outputData.pointer = 0;
+				outputData.isShift = false;
 				outputData.isEnd = true;
 			}
 			else if (IsEmptyRule(outputData.symbol))
