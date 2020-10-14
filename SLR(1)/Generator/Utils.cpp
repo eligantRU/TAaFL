@@ -57,14 +57,14 @@ void PrintInfoVector(std::ostream& fileOutput, const std::vector<std::string>& v
 	}
 }
 
-std::vector<PairStringBool>::iterator GetIteratorFindIfVector(std::vector<PairStringBool>& vec, const std::string str)
+std::vector<PairStringBool>::const_iterator GetIteratorFindIfVector(const std::vector<PairStringBool>& vec, const std::string str)
 {
-	return std::find_if(vec.begin(), vec.end(), [&](const PairStringBool& data) { return data.first == str; });
+	return std::find_if(vec.cbegin(), vec.cend(), [&](const PairStringBool& data) { return data.first == str; });
 }
 
-std::vector<PairStringVectorPair>::iterator GetIteratorFindIfVector(std::vector<PairStringVectorPair>& vec, const std::string str)
+std::vector<PairStringVectorPair>::const_iterator GetIteratorFindIfVector(const std::vector<PairStringVectorPair>& vec, const std::string str)
 {
-	return std::find_if(vec.begin(), vec.end(), [&](const PairStringVectorPair& data) { return data.first == str; });
+	return std::find_if(vec.cbegin(), vec.cend(), [&](const PairStringVectorPair& data) { return data.first == str; });
 }
 
 size_t GetDistanceVector(const std::vector<std::string>& vec, const std::string str)

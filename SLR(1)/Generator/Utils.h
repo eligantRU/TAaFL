@@ -15,8 +15,8 @@ std::string SubstrNonterminal(const std::string str);
 
 void PrintInfoVector(std::ostream& fileOutput, const std::vector<std::string>& vec, const std::string str);
 
-std::vector<PairStringBool>::iterator GetIteratorFindIfVector(std::vector<PairStringBool>& vec, const std::string str);
-std::vector<PairStringVectorPair>::iterator GetIteratorFindIfVector(std::vector<PairStringVectorPair>& vec, const std::string str);
+std::vector<PairStringBool>::const_iterator GetIteratorFindIfVector(const std::vector<PairStringBool>& vec, const std::string str);
+std::vector<PairStringVectorPair>::const_iterator GetIteratorFindIfVector(const std::vector<PairStringVectorPair>& vec, const std::string str);
 
 size_t GetDistanceVector(const std::vector<std::string>& vec, const std::string str);
 

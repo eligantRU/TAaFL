@@ -25,13 +25,9 @@ int main(int argc, char* argv[])
 
 	std::srand(unsigned(std::time(0)));
 
-	std::vector<TableData> tableDataGuideSets;
-	std::vector<std::string> characters;
-
-	std::vector<OutputDataGuideSets> outputDatasSets = GetFormingGuideSets(fileInput, characters, tableDataGuideSets);
+	std::vector<OutputDataGuideSets> outputDatasSets = GetFormingGuideSets(fileInput);
 	PrintResultGuideSets(fileGuideSets, outputDatasSets);
 
-	GeneratorLR generatorLR(fileOutput, outputDatasSets, characters, tableDataGuideSets);
-	generatorLR.Generate();
-	generatorLR.PrintResult();
+	GeneratorLR generatorLR(outputDatasSets);
+	generatorLR.Print(fileOutput);
 }
