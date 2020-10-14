@@ -2,43 +2,8 @@
 
 #include "../../Lexer/Lexer.hpp"
 
-namespace
-{
-
 namespace fromLL
 {
-
-template <class T>
-T Uniqify(const T & c)
-{
-	std::set bla(c.cbegin(), c.cend());
-	return { bla.cbegin(), bla.cend() };
-}
-
-void SearchStartingTerminalsEmptyRules(const std::vector<OutputDataGuideSets>& outputDatas,
-	std::string parentNonterminal, std::string nonterminal,
-	std::vector<PairStringVectorPair>& transitions, const std::vector<PairStringBool>& characters)
-{
-	for (const auto& outputData : outputDatas)
-	{
-		if (auto it1 = std::find_if(outputData.terminals.begin(), outputData.terminals.end(), [&](const std::string& str) {
-				return str == nonterminal;
-			}); it1 != outputData.terminals.end())
-		{
-			size_t distance = std::distance(outputData.terminals.begin(), it1);
-			size_t size = outputData.terminals.size() - 1;
-			std::string terminal = (distance <= size) ? (distance < size ? outputData.terminals[distance + 1] : outputData.terminals.back()) : NONTERMINAL_END_SEQUENCE;
-
-			size_t row = std::distance(transitions.cbegin(), GetIteratorFindIfVector(transitions, parentNonterminal));
-			size_t column = std::distance(characters.cbegin(), GetIteratorFindIfVector(characters, IsEndRule(terminal) ? NONTERMINAL_END_SEQUENCE : terminal));
-
-			if ((row < transitions.size()) && (column < characters.size()) && (terminal != parentNonterminal))
-			{
-				transitions[row].second[column].second = true;
-			}
-		}
-	}
-}
 
 void BuildingFirstRelationship(const std::vector<OutputDataGuideSets>& outputDatas, std::vector<PairStringVectorPair>& transitions, const std::vector<PairStringBool>& characters)
 {
@@ -49,14 +14,7 @@ void BuildingFirstRelationship(const std::vector<OutputDataGuideSets>& outputDat
 
 		if ((row < transitions.size()) && (column < characters.size()))
 		{
-			if (IsEmptyRule(outputData.terminals.front()))
-			{
-				SearchStartingTerminalsEmptyRules(outputDatas, outputData.nonterminal, outputData.nonterminal, transitions, characters);
-			}
-			else
-			{
-				transitions[row].second[column].second = true;
-			}
+			transitions[row].second[column].second = true;
 		}
 	}
 }
@@ -81,107 +39,6 @@ void BuildingFirstPlusRelationship(std::vector<PairStringVectorPair>& transition
 			}
 		}
 	}
-}
-
-std::vector<std::string> GetFollow(const std::vector<OutputDataGuideSets>& rules, std::string nonTerminal, std::set<std::string> way = {})
-{
-	std::vector<std::string> result;
-	for (const auto& subRule : rules)
-	{
-		if (auto it = std::find_if(subRule.terminals.cbegin(), subRule.terminals.cend(), [&](std::string_view sv) {
-			return sv == nonTerminal;
-			}); it != subRule.terminals.cend())
-		{
-			size_t distance = std::distance(subRule.terminals.cbegin(), it);
-			size_t size = subRule.terminals.size() - 1;
-
-			if (const auto bla = (distance <= size)
-				? ((distance < size) ? subRule.terminals[distance + 1] : subRule.terminals.back())
-				: NONTERMINAL_END_SEQUENCE; bla != nonTerminal)
-			{
-				result.push_back(bla);
-
-				if ((bla == TERMINAL_END_SEQUENCE) && !way.count(subRule.nonterminal)) // TODO: copy-paste
-				{
-					auto tmpWay(way);
-					tmpWay.insert(subRule.nonterminal);
-					const auto tmp = GetFollow(rules, subRule.nonterminal, tmpWay);
-					std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(result));
-				}
-			}
-			else if (!way.count(subRule.nonterminal))
-			{
-				auto tmpWay(way);
-				tmpWay.insert(subRule.nonterminal);
-				const auto tmp = GetFollow(rules, subRule.nonterminal, tmpWay);
-				std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(result));
-			}
-		}
-	}
-	return Uniqify(result);
-}
-
-std::vector<std::string> GetFirst(const std::vector<OutputDataGuideSets> & rules, OutputDataGuideSets processingRule)
-{
-	std::vector<std::string> result;
-
-	const auto processingLeft = processingRule.nonterminal;
-	const auto firstProcessingRight = processingRule.terminals.front();
-	
-	if (IsEmptyRule(firstProcessingRight))
-	{
-		const auto bla = GetFollow(rules, processingLeft);
-		std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
-	}
-	else if (IsNonterminal(firstProcessingRight))
-	{
-		for (const auto& rule : rules)
-		{
-			if (IsNonterminal(firstProcessingRight))
-			{
-				if (rule.nonterminal == firstProcessingRight)
-				{
-					const auto bla = GetFirst(rules, rule);
-					std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
-				}
-			}
-		}
-	}
-	else
-	{
-		result = { firstProcessingRight };
-	}
-	return Uniqify(result);
-}
-
-std::vector<std::string> GetGuideCharsByRule(const std::vector<OutputDataGuideSets> & rules, OutputDataGuideSets processingRule)
-{
-	auto result = GetFirst(rules, processingRule);
-
-	decltype(result) terminals;
-	decltype(result) nonTerminals;
-
-	auto it = std::partition(result.begin(), result.end(), [](const std::string& sv) {
-		return IsNonterminal(sv);
-	});
-	std::copy(result.begin(), it, std::back_inserter(nonTerminals));
-	std::copy(it, result.end(), std::back_inserter(terminals));
-	result = terminals;
-
-	for (const auto & nonTerminal : nonTerminals)
-	{
-		for (const auto & rule : rules)
-		{
-			if (rule.nonterminal == nonTerminal)
-			{
-				const auto bla = GetGuideCharsByRule(rules, rule);
-				std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
-			}
-		}
-	}
-	return Uniqify(result);
-};
-
 }
 
 }
@@ -265,9 +122,12 @@ bool RemoveEmptyRulesImpl(std::vector<InputData>& inputDatas)
 	return epsables.empty();
 }
 
-void RemoveEmptyRules(std::vector<InputData>& inputDatas)
+void RemoveEmptyRules(std::vector<InputData>& inputDatas, std::vector<std::string>& terminals)
 {
 	while (!RemoveEmptyRulesImpl(inputDatas));
+
+	terminals.erase(std::remove(terminals.begin(), terminals.end(), NONTERMINAL_END_SEQUENCE), terminals.end());
+	terminals.push_back(TERMINAL_END_SEQUENCE);
 }
 
 void FillingData(std::istream& fileInput, std::vector<InputData>& inputDatas, std::vector<std::string>& nonterminals, std::vector<std::string>& terminals)
@@ -328,12 +188,46 @@ void FillingData(std::istream& fileInput, std::vector<InputData>& inputDatas, st
 	}
 }
 
-void AddingGuideCharacters(std::vector<OutputDataGuideSets>& outputDatas)
+void Bla(std::vector<OutputDataGuideSets>& outputDatas, const std::vector<std::string>& nonterminals, const std::vector<std::string>& terminals)
 {
-	for (auto & outputData : outputDatas)
+	std::vector<PairStringVectorPair> transitions;
+	std::vector<PairStringBool> characters;
+
+	std::for_each(nonterminals.begin(), nonterminals.end(), [&](std::string str) { characters.emplace_back(str, false); });
+	std::for_each(terminals.begin(), terminals.end(), [&](std::string str) { characters.emplace_back(str, false); });
+	std::for_each(nonterminals.begin(), nonterminals.end(), [&](std::string str) { transitions.emplace_back(str, characters); });
+
+	fromLL::BuildingFirstRelationship(outputDatas, transitions, characters);
+	fromLL::BuildingFirstPlusRelationship(transitions);
+
+	std::cout << ">> Rules:" << std::endl;
+	for (const auto& outputData : outputDatas)
 	{
-		outputData.guideCharacters = fromLL::GetGuideCharsByRule(outputDatas, outputData);
+		std::cout << TAB << outputData.nonterminal << SPACE << DELIMITER << SPACE;
+		PrintInfoVector(std::cout, outputData.terminals, SPACE);
+		std::cout << std::endl;
 	}
+	std::cout << std::endl;
+	/*std::cout << ">> First*:" << std::endl;
+	for (const auto& nonTerminal : nonterminals)
+	{
+		const auto it = std::find_if(transitions.cbegin(), transitions.cend(), [&nonTerminal](const auto& row) {
+			return row.first == nonTerminal;
+		});
+
+		std::vector<std::string> bla;
+		for (const auto& [to, has] : (*it).second)
+		{
+			if (has)
+			{
+				bla.push_back(to);
+			}
+		}
+
+		std::cout << TAB << nonTerminal << SPACE << DELIMITER << SPACE;
+		PrintInfoVector(std::cout, bla, SPACE);
+		std::cout << std::endl;
+	}*/
 }
 
 bool IsReplenishedGrammar(const std::vector<OutputDataGuideSets>& outputDatas)
@@ -412,22 +306,10 @@ std::vector<OutputDataGuideSets> GetFormingGuideSets(std::istream& fileInput)
 	std::vector<std::string> terminals;
 	
 	FillingData(fileInput, inputDatas, nonterminals, terminals);
-	RemoveEmptyRules(inputDatas);
+	RemoveEmptyRules(inputDatas, terminals);
 	Forming(inputDatas, outputDatas, nonterminals);
 
-	AddingGuideCharacters(outputDatas);
+	Bla(outputDatas, nonterminals, terminals);
 
 	return outputDatas;
-}
-
-void PrintResultGuideSets(std::ostream& fileOutput, const std::vector<OutputDataGuideSets>& outputDatas)
-{
-	for (const auto& outputData : outputDatas)
-	{
-		fileOutput << outputData.nonterminal << SPACE << DELIMITER << SPACE;
-		PrintInfoVector(fileOutput, outputData.terminals, SPACE);
-		fileOutput << SPACE << "/" << SPACE;
-		PrintInfoVector(fileOutput, outputData.guideCharacters, SPACE);
-		fileOutput << std::endl;
-	}
 }

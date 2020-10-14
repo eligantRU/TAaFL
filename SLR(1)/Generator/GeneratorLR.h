@@ -5,11 +5,14 @@
 class GeneratorLR
 {
 public:
-	GeneratorLR(const std::vector<OutputDataGuideSets>& inputDatas);
+	GeneratorLR(const std::vector<OutputDataGuideSets>& datas);
 
 	void Generate();
-	void Print(std::ostream& fileOutput);
+	void Print(std::ostream& output);
 
 private:
-	std::vector<OutputDataGuideSets> m_inputDatas;
+	std::vector<OutputDataGuideSets> m_datas;
+
+	std::vector<std::string> m_chars;
+	std::vector<std::vector<std::vector<std::string>>> m_table;
 };

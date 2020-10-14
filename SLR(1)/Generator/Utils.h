@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Header.h"
 
 using PairStringBool = std::pair<std::string, bool>;
