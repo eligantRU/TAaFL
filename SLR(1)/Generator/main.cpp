@@ -15,19 +15,14 @@ int main(int argc, char* argv[])
 	std::ifstream fileInput(argv[1]);
 	std::ofstream fileOutput(argv[2]);
 
-	std::ofstream fileGuideSets("output_guideSets.txt");
-
 	if (!fileInput.is_open())
 	{
 		std::cerr << "This file does not exist" << std::endl;
 		return 1;
 	}
 
-	std::srand(unsigned(std::time(0)));
+	std::srand(unsigned(std::time(nullptr)));
 
-	std::vector<OutputDataGuideSets> outputDatasSets = GetFormingGuideSets(fileInput);
-	PrintResultGuideSets(fileGuideSets, outputDatasSets);
-
-	GeneratorLR generatorLR(outputDatasSets);
+	GeneratorLR generatorLR(GetFormingGuideSets(fileInput));
 	generatorLR.Print(fileOutput);
 }

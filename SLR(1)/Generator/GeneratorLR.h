@@ -14,5 +14,5 @@ private:
 	std::vector<OutputDataGuideSets> m_datas;
 
 	std::vector<std::string> m_chars;
-	std::vector<std::vector<std::vector<std::string>>> m_table;
+	std::vector<std::vector<std::set<std::string>>> m_table;
 };

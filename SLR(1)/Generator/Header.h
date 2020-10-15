@@ -1,12 +1,14 @@
 #pragma once
 
 #include <algorithm>
-#include <fstream>
 #include <iterator>
+#include <fstream>
+#include <variant>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <set>
+#include <map>
 
 const std::string TAB = "\t";
 const std::string SPACE = " ";
