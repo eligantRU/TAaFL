@@ -1,4 +1,4 @@
-#include "GeneratorLR.h"
+#include "GeneratorSLR.h"
 
 #include <iostream>
 
@@ -24,9 +24,9 @@ std::vector<std::string> GetUniqueCharacters(const std::vector<OutputDataGuideSe
 	return vecResult;
 }
 
-std::vector<std::vector<std::set<std::string>>> MakeTable(size_t width, size_t height)
+std::vector<std::vector<std::variant<std::set<std::pair<size_t, size_t>>, size_t>>> MakeTable(size_t width, size_t height)
 {
-	std::vector<std::vector<std::set<std::string>>> result;
+	std::vector<std::vector<std::variant<std::set<std::pair<size_t, size_t>>, size_t>>> result;
 	for (size_t i = 0; i < height; ++i)
 	{
 		std::vector<std::vector<std::string>> tmp(width);
@@ -85,16 +85,6 @@ std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirstByNonTerm
 	return Uniqify(result);
 }
 
-}
-
-GeneratorLR::GeneratorLR(const std::vector<OutputDataGuideSets>& datas)
-	:m_datas(datas)
-	,m_chars(GetUniqueCharacters(datas))
-	,m_table(MakeTable(m_chars.size(), m_datas.size()))
-{
-	Generate();
-}
-
 std::vector<std::string> GetFollow(const std::vector<OutputDataGuideSets>& rules, std::string nonTerminal, std::set<std::string> way = {}) // TODO:
 {
 	std::vector<std::string> result;
@@ -133,7 +123,17 @@ std::vector<std::string> GetFollow(const std::vector<OutputDataGuideSets>& rules
 	return Uniqify(result);
 }
 
-void GeneratorLR::Generate()
+}
+
+GeneratorSLR::GeneratorSLR(const std::vector<OutputDataGuideSets>& datas)
+	:m_datas(datas)
+	,m_chars(GetUniqueCharacters(datas))
+	,m_table(MakeTable(m_chars.size(), m_datas.size()))
+{
+	Generate();
+}
+
+void GeneratorSLR::Generate()
 {
 	auto transitions = ColdStart();
 	TransitionsToTable(transitions);
@@ -143,42 +143,43 @@ void GeneratorLR::Generate()
 	const auto axiom = m_datas.front().nonterminal;
 	for (const auto& next : nextToProcess)
 	{
-		for (const auto& [ch, pos] : next)
+		for (const auto& pos : next)
 		{
 			if (((pos.second + 1) == m_datas[pos.first].terminals.size())
 				|| (((pos.second + 2) == m_datas[pos.first].terminals.size()) && IsEndRule(m_datas[pos.first].terminals.back())))
 			{ // roll-up
 				if (((pos.second + 2) == m_datas[pos.first].terminals.size()))
 				{
-					transitions[TERMINAL_END_SEQUENCE].insert(pos.first);
+					transitions[TERMINAL_END_SEQUENCE] = pos.first;
 					continue;
 				}
 				const auto follows = GetFollow(m_datas, m_datas[pos.first].nonterminal);
 				for (const auto& follow : follows)
 				{
-					transitions[follow].insert(pos.first);
+					transitions[follow] = pos.first;
 				}
 			}
 			else
 			{
-				transitions[m_datas[pos.first].terminals[pos.second + 1]].insert(std::make_pair(pos.first, pos.second + 1));
+				std::get<0>(transitions[m_datas[pos.first].terminals[pos.second + 1]]).insert(std::make_pair(pos.first, pos.second + 1));
 				for (const auto& [ch, pos] : GetFirstByNonTerminal(m_datas, m_datas[pos.first].terminals[pos.second + 1]))
 				{
-					transitions[ch].insert(pos);
+					std::get<0>(transitions[ch]).insert(pos);
 				}
 			}
 		}
-		m_mainColumn.push_back(next);
+
+		m_mainColumn.emplace_back(next);
 		TransitionsToTable(transitions);
 		transitions.clear();
 	}
 }
 
-std::map<std::string, std::set<std::variant<size_t, std::pair<size_t, size_t>>>> GeneratorLR::ColdStart() const
+std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>> GeneratorSLR::ColdStart() const
 {
 	const auto axiom = m_datas.front().nonterminal;
 
-	std::map<std::string, std::set<std::variant<size_t, std::pair<size_t, size_t>>>> transitions;
+	std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>> transitions;
 	for (size_t i = 0; i < m_datas.size(); ++i)
 	{
 		const auto& [left, right, _] = m_datas[i];
@@ -189,87 +190,85 @@ std::map<std::string, std::set<std::variant<size_t, std::pair<size_t, size_t>>>>
 
 		if (right.size() == 1)
 		{
-			transitions[right.front()].insert(i);
+			transitions[right.front()] = i;
 		}
 		else
 		{
-			transitions[right.front()].insert(std::make_pair(i, 0));
+			std::get<0>(transitions[right.front()]).insert(std::make_pair(i, 0));
 		}
 
 		if (IsNonterminal(right.front()))
 		{
 			for (const auto& [ch, pos] : GetFirstByNonTerminal(m_datas, right.front()))
 			{
-				transitions[ch].insert(pos);
+				std::get<0>(transitions[right.front()]).insert(pos);
 			}
 		}
 	}
 	return transitions;
 }
 
-void GeneratorLR::TransitionsToTable(const std::map<std::string, std::set<std::variant<size_t, std::pair<size_t, size_t>>>>& transitions)
+void GeneratorSLR::TransitionsToTable(const std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions)
 {
 	static size_t rowNum = 0;
 	for (const auto& [k, v] : transitions)
 	{
-		for (const auto& var : v)
-		{
-			const auto columnNum = std::distance(m_chars.cbegin(), std::find(m_chars.cbegin(), m_chars.cend(), k));
-
-			std::visit([this, &k, columnNum](auto && arg) {
-				using T = std::decay_t<decltype(arg)>;
-				if constexpr (std::is_same_v<T, size_t>)
+		std::visit([this, &k](auto && arg) {
+			using T = std::decay_t<decltype(arg)>;
+			if constexpr (std::is_same_v<T, size_t>)
+			{
+				const auto columnNum = std::distance(m_chars.cbegin(), std::find(m_chars.cbegin(), m_chars.cend(), k));
+				m_table[rowNum][columnNum] = arg;
+			}
+			else if constexpr (std::is_same_v<T, std::set<std::pair<size_t, size_t>>>)
+			{
+				for (const auto& pos : arg)
 				{
-					m_table[rowNum][columnNum].insert("R" + std::to_string(arg));
+					const auto ch = m_datas[pos.first].terminals[pos.second];
+					const auto columnNum = std::distance(m_chars.cbegin(), std::find(m_chars.cbegin(), m_chars.cend(), ch));
+					std::get<0>(m_table[rowNum][columnNum]).insert(pos);
 				}
-				else if constexpr (std::is_same_v<T, std::pair<size_t, size_t>>)
-				{
-					m_table[rowNum][columnNum].insert(k + std::to_string(arg.first) + "," + std::to_string(arg.second));
-				}
-				else
-				{
-					static_assert(always_false_v<T>, "non-exhaustive visitor!");
-				}
-			}, var);
-		}
+			}
+			else
+			{
+				static_assert(always_false_v<T>, "non-exhaustive visitor!");
+			}
+		}, v);
 	}
 	++rowNum;
 }
 
-std::set<std::set<std::pair<std::string, std::pair<size_t, size_t>>>> GeneratorLR::GetNextToProcess(const std::map<std::string, std::set<std::variant<size_t, std::pair<size_t, size_t>>>>& transitions) const
+std::set<std::set<std::pair<size_t, size_t>>> GeneratorSLR::GetNextToProcess(const std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions) const
 {
-	std::set<std::set<std::pair<std::string, std::pair<size_t, size_t>>>> nextToProcess;
-	for (const auto& transition : transitions)
+	std::set<std::set<std::pair<size_t, size_t>>> nextToProcess;
+	for (const auto& row : m_table)
 	{
-		std::set<std::pair<std::string, std::pair<size_t, size_t>>> bla;
-		const auto& [k, v] = transition;
-		for (const auto& var : v)
+		for (const auto& cell : row)
 		{
-			std::visit([&k, &bla](auto && arg) {
-				using T = std::decay_t<decltype(arg)>;
-				if constexpr (std::is_same_v<T, size_t>)
-				{
-					// Do nothing
-				}
-				else if constexpr (std::is_same_v<T, std::pair<size_t, size_t>>)
-				{
-					bla.insert(std::make_pair(k, arg));
-				}
-				else
-				{
-					static_assert(always_false_v<T>, "non-exhaustive visitor!");
-				}
-			}, var);
-		}
-		if (!bla.empty())
-		{
-			nextToProcess.insert(bla);
+			if (std::visit([this](auto&& arg) {
+					using T = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same_v<T, size_t>)
+					{
+						return false;
+					}
+					else if constexpr (std::is_same_v<T, std::set<std::pair<size_t, size_t>>>)
+					{
+						return !arg.empty() && (std::find(m_mainColumn.cbegin(), m_mainColumn.cend(), arg) == m_mainColumn.cend());
+					}
+					else
+					{
+						static_assert(always_false_v<T>, "non-exhaustive visitor!");
+					}
+				}, cell))
+			{
+				nextToProcess.insert(std::get<0>(cell));
+			}
 		}
 	}
 	return nextToProcess;
 }
 
-void GeneratorLR::Print(std::ostream& output) const
+void GeneratorSLR::Print(std::ostream& output) const
 {
 	output << "Number" << TAB << "Char" << TAB;
 	PrintInfoVector(output, m_chars, TAB);
@@ -283,15 +282,17 @@ void GeneratorLR::Print(std::ostream& output) const
 		}
 		else
 		{
-			std::string bla = "[";
+			std::string bla;
 			if (i > m_mainColumn.size())
 			{
 				bla = "[Undef]";
 			}
 			else
 			{
-				for (const auto& [ch, pos] : m_mainColumn[i - 1])
+				bla = "[";
+				for (const auto& pos : m_mainColumn[i - 1])
 				{
+					const auto ch = m_datas[pos.first].terminals[pos.second];
 					bla += ch + std::to_string(pos.first) + "," + std::to_string(pos.second) + "+";
 				}
 				bla += "]";
@@ -302,9 +303,33 @@ void GeneratorLR::Print(std::ostream& output) const
 		output << TAB;
 		for (const auto& action : m_table[i])
 		{
-			std::vector<std::string> bla(action.cbegin(), action.cend());
-			PrintInfoVector(output, bla, "+");
-			output << "_"; // TODO:
+			output << std::visit([this](auto&& arg) {
+				using T = std::decay_t<decltype(arg)>;
+				if constexpr (std::is_same_v<T, size_t>)
+				{
+					return "R" + std::to_string(arg);
+				}
+				else if constexpr (std::is_same_v<T, std::set<std::pair<size_t, size_t>>>)
+				{
+					if (arg.empty())
+					{
+						return std::string("-");
+					}
+
+					std::string bla;
+					for (const auto& pos : arg)
+					{
+						const auto ch = m_datas[pos.first].terminals[pos.second];
+						bla += ch + std::to_string(pos.first) + "," + std::to_string(pos.second) + "+";
+					}
+					return bla;
+				}
+				else
+				{
+					static_assert(always_false_v<T>, "non-exhaustive visitor!");
+				}
+			}, action);
+			output << " "; // TODO:
 		}
 		output << std::endl;
 	}
