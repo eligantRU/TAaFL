@@ -44,7 +44,7 @@ std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirst(const st
 	{
 		for (const auto& rule : rules)
 		{
-			if (rule.nonterminal == firstProcessingRight)
+			if ((rule.nonterminal == firstProcessingRight) && (rule.nonterminal != processingRule.nonterminal) && (rule.terminals != processingRule.terminals))
 			{
 				const auto bla = GetFirst(rules, rule);
 				std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
@@ -74,38 +74,36 @@ std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirstByNonTerm
 	return Uniqify(result);
 }
 
-std::vector<std::string> GetFollow(const std::vector<OutputDataGuideSets>& rules, std::string nonTerminal, std::set<std::string> way = {}) // TODO:
+std::vector<std::string> GetFollow(const std::vector<OutputDataGuideSets>& rules, std::string nonTerminal, std::set<std::string> way = {})
 {
 	std::vector<std::string> result;
 	for (const auto& subRule : rules)
 	{
 		if (auto it = std::find_if(subRule.terminals.cbegin(), subRule.terminals.cend(), [&](std::string_view sv) {
-			return sv == nonTerminal;
+				return sv == nonTerminal;
 			}); it != subRule.terminals.cend())
 		{
 			size_t distance = std::distance(subRule.terminals.cbegin(), it);
-			size_t size = subRule.terminals.size() - 1;
+			size_t size = subRule.terminals.size();
 
-			if (const auto bla = (distance <= size)
-				? ((distance < size) ? subRule.terminals[distance + 1] : subRule.terminals.back())
-				: NONTERMINAL_END_SEQUENCE; bla != nonTerminal)
+			if ((distance < (size - 1)) && (subRule.terminals[distance + 1] != nonTerminal))
 			{
-				result.push_back(bla);
-
-				if ((bla == TERMINAL_END_SEQUENCE) && !way.count(subRule.nonterminal)) // TODO: copy-paste
+				result.push_back(subRule.terminals[distance + 1]);
+				const auto first = GetFirstByNonTerminal(rules, subRule.terminals[distance + 1]);
+				for (const auto& [ch, pos] : first)
+				{
+					result.push_back(ch);
+				}
+			}
+			else if (distance == (size - 1))
+			{
+				if (!way.count(subRule.nonterminal))
 				{
 					auto tmpWay(way);
 					tmpWay.insert(subRule.nonterminal);
 					const auto tmp = GetFollow(rules, subRule.nonterminal, tmpWay);
 					std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(result));
 				}
-			}
-			else if (!way.count(subRule.nonterminal))
-			{
-				auto tmpWay(way);
-				tmpWay.insert(subRule.nonterminal);
-				const auto tmp = GetFollow(rules, subRule.nonterminal, tmpWay);
-				std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(result));
 			}
 		}
 	}
@@ -125,11 +123,9 @@ void GeneratorSLR::Generate()
 {
 	auto transitions = ColdStart();
 	TransitionsToTable(transitions);
-	auto nextToProcess = GetNextToProcess();
 	transitions.clear();
-
-	const auto axiom = m_datas.front().nonterminal;
-
+	
+	auto nextToProcess = GetNextToProcess();
 	do
 	{
 		for (const auto& next : nextToProcess)
@@ -144,6 +140,7 @@ void GeneratorSLR::Generate()
 						transitions[TERMINAL_END_SEQUENCE] = pos.first;
 						continue;
 					}
+
 					const auto follows = GetFollow(m_datas, m_datas[pos.first].nonterminal);
 					for (const auto& follow : follows)
 					{
@@ -153,7 +150,8 @@ void GeneratorSLR::Generate()
 				else
 				{
 					std::get<0>(transitions[m_datas[pos.first].terminals[pos.second + 1]]).insert(std::make_pair(pos.first, pos.second + 1));
-					for (const auto& [ch, pos] : GetFirstByNonTerminal(m_datas, m_datas[pos.first].terminals[pos.second + 1]))
+					const auto first = GetFirstByNonTerminal(m_datas, m_datas[pos.first].terminals[pos.second + 1]);
+					for (const auto& [ch, pos] : first)
 					{
 						std::get<0>(transitions[ch]).insert(pos);
 					}
@@ -265,12 +263,73 @@ std::set<std::set<std::pair<size_t, size_t>>> GeneratorSLR::GetNextToProcess() c
 
 void GeneratorSLR::Print(std::ostream& output) const
 {
-	output << "Number" << TAB;
+	constexpr auto isDebugMode = false;
+
+	if (!isDebugMode)
+	{
+		output << "Number" << TAB;
+		PrintInfoVector(output, m_chars, TAB);
+		output << std::endl;
+		for (size_t i = 0; i < m_table.size(); ++i)
+		{
+			output << i << TAB;
+			for (const auto& action : m_table[i])
+			{
+				output << std::visit([this](auto&& arg) {
+					using T = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same_v<T, size_t>)
+					{
+						return "R" + std::to_string(arg);
+					}
+					else if constexpr (std::is_same_v<T, std::set<std::pair<size_t, size_t>>>)
+					{
+						return arg.empty()
+							? "-"
+							: ("S" + std::to_string(1 + std::distance(m_mainColumn.cbegin(), std::find(m_mainColumn.cbegin(), m_mainColumn.cend(), arg))));
+					}
+					else
+					{
+						static_assert(always_false_v<T>, "non-exhaustive visitor!");
+					}
+				}, action);
+				output << TAB;
+			}
+			output << std::endl;
+		}
+	}
+	else
+	{
+	output << "Number" << TAB << "Char" << TAB;
 	PrintInfoVector(output, m_chars, TAB);
 	output << std::endl;
 	for (size_t i = 0; i < m_table.size(); ++i)
 	{
 		output << i << TAB;
+		if (!i)
+		{
+			output << "Init";
+		}
+		else
+		{
+			std::string bla;
+			if (i > m_mainColumn.size())
+			{
+				bla = "[Undef]";
+			}
+			else
+			{
+				bla = "[";
+				for (const auto& pos : m_mainColumn[i - 1])
+				{
+					const auto ch = m_datas[pos.first].terminals[pos.second];
+					bla += ch + std::to_string(pos.first) + "," + std::to_string(pos.second) + "+";
+				}
+				bla += "]";
+			}
+
+			output << bla;
+		}
+		output << TAB;
 		for (const auto& action : m_table[i])
 		{
 			output << std::visit([this](auto&& arg) {
@@ -281,17 +340,27 @@ void GeneratorSLR::Print(std::ostream& output) const
 				}
 				else if constexpr (std::is_same_v<T, std::set<std::pair<size_t, size_t>>>)
 				{
-					return arg.empty()
-						? "-"
-						: ("S" + std::to_string(1 + std::distance(m_mainColumn.cbegin(), std::find(m_mainColumn.cbegin(), m_mainColumn.cend(), arg))));
+					if (arg.empty())
+					{
+						return std::string("-");
+					}
+
+					std::string bla;
+					for (const auto& pos : arg)
+					{
+						const auto ch = m_datas[pos.first].terminals[pos.second];
+						bla += ch + std::to_string(pos.first) + "," + std::to_string(pos.second) + "+";
+					}
+					return bla;
 				}
 				else
 				{
 					static_assert(always_false_v<T>, "non-exhaustive visitor!");
 				}
 			}, action);
-			output << TAB;
+			output << " ";
 		}
 		output << std::endl;
+	}
 	}
 }
