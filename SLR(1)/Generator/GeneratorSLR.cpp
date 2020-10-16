@@ -141,38 +141,43 @@ void GeneratorSLR::Generate()
 	transitions.clear();
 
 	const auto axiom = m_datas.front().nonterminal;
-	for (const auto& next : nextToProcess)
-	{
-		for (const auto& pos : next)
-		{
-			if (((pos.second + 1) == m_datas[pos.first].terminals.size())
-				|| (((pos.second + 2) == m_datas[pos.first].terminals.size()) && IsEndRule(m_datas[pos.first].terminals.back())))
-			{ // roll-up
-				if (((pos.second + 2) == m_datas[pos.first].terminals.size()))
-				{
-					transitions[TERMINAL_END_SEQUENCE] = pos.first;
-					continue;
-				}
-				const auto follows = GetFollow(m_datas, m_datas[pos.first].nonterminal);
-				for (const auto& follow : follows)
-				{
-					transitions[follow] = pos.first;
-				}
-			}
-			else
-			{
-				std::get<0>(transitions[m_datas[pos.first].terminals[pos.second + 1]]).insert(std::make_pair(pos.first, pos.second + 1));
-				for (const auto& [ch, pos] : GetFirstByNonTerminal(m_datas, m_datas[pos.first].terminals[pos.second + 1]))
-				{
-					std::get<0>(transitions[ch]).insert(pos);
-				}
-			}
-		}
 
-		m_mainColumn.emplace_back(next);
-		TransitionsToTable(transitions);
-		transitions.clear();
-	}
+	do
+	{
+		for (const auto& next : nextToProcess)
+		{
+			for (const auto& pos : next)
+			{
+				if (((pos.second + 1) == m_datas[pos.first].terminals.size())
+					|| (((pos.second + 2) == m_datas[pos.first].terminals.size()) && IsEndRule(m_datas[pos.first].terminals.back())))
+				{
+					if (((pos.second + 2) == m_datas[pos.first].terminals.size()))
+					{
+						transitions[TERMINAL_END_SEQUENCE] = pos.first;
+						continue;
+					}
+					const auto follows = GetFollow(m_datas, m_datas[pos.first].nonterminal);
+					for (const auto& follow : follows)
+					{
+						transitions[follow] = pos.first;
+					}
+				}
+				else
+				{
+					std::get<0>(transitions[m_datas[pos.first].terminals[pos.second + 1]]).insert(std::make_pair(pos.first, pos.second + 1));
+					for (const auto& [ch, pos] : GetFirstByNonTerminal(m_datas, m_datas[pos.first].terminals[pos.second + 1]))
+					{
+						std::get<0>(transitions[ch]).insert(pos);
+					}
+				}
+			}
+
+			m_mainColumn.emplace_back(next);
+			TransitionsToTable(transitions);
+			transitions.clear();
+		}
+		nextToProcess = GetNextToProcess();
+	} while (!nextToProcess.empty());
 }
 
 std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>> GeneratorSLR::ColdStart() const
