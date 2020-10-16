@@ -24,17 +24,6 @@ std::vector<std::string> GetUniqueCharacters(const std::vector<OutputDataGuideSe
 	return vecResult;
 }
 
-std::vector<std::vector<std::variant<std::set<std::pair<size_t, size_t>>, size_t>>> MakeTable(size_t width, size_t height)
-{
-	std::vector<std::vector<std::variant<std::set<std::pair<size_t, size_t>>, size_t>>> result;
-	for (size_t i = 0; i < height; ++i)
-	{
-		std::vector<std::vector<std::string>> tmp(width);
-		result.emplace_back(width);
-	}
-	return result;
-}
-
 template <class T>
 T Uniqify(const T & c)
 {
@@ -128,7 +117,6 @@ std::vector<std::string> GetFollow(const std::vector<OutputDataGuideSets>& rules
 GeneratorSLR::GeneratorSLR(const std::vector<OutputDataGuideSets>& datas)
 	:m_datas(datas)
 	,m_chars(GetUniqueCharacters(datas))
-	,m_table(MakeTable(m_chars.size(), m_datas.size()))
 {
 	Generate();
 }
@@ -216,6 +204,8 @@ std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>
 void GeneratorSLR::TransitionsToTable(const std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions)
 {
 	static size_t rowNum = 0;
+
+	m_table.emplace_back(m_chars.size());
 	for (const auto& [k, v] : transitions)
 	{
 		std::visit([this, &k](auto && arg) {

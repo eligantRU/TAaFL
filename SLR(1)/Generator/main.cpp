@@ -1,4 +1,4 @@
-#include "GeneratorLR.h"
+#include "GeneratorSLR.h"
 #include "GuideSets.h"
 #include <ctime>
 #include <iostream>
@@ -23,6 +23,6 @@ int main(int argc, char* argv[])
 
 	std::srand(unsigned(std::time(nullptr)));
 
-	GeneratorLR generatorLR(GetFormingGuideSets(fileInput));
-	generatorLR.Print(fileOutput);
+	GeneratorSLR generator(GetFormingGuideSets(fileInput));
+	generator.Print(fileOutput);
 }
