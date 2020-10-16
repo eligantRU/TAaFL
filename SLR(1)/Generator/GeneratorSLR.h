@@ -13,7 +13,7 @@ public:
 private:
 	std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>> ColdStart() const;
 	void TransitionsToTable(const std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions);
-	std::set<std::set<std::pair<size_t, size_t>>> GetNextToProcess(const std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions) const;
+	std::set<std::set<std::pair<size_t, size_t>>> GetNextToProcess() const;
 
 	std::vector<OutputDataGuideSets> m_datas;
 

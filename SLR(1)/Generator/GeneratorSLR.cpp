@@ -137,9 +137,9 @@ void GeneratorSLR::Generate()
 {
 	auto transitions = ColdStart();
 	TransitionsToTable(transitions);
-	auto nextToProcess = GetNextToProcess(transitions);
+	auto nextToProcess = GetNextToProcess();
 	transitions.clear();
-	
+
 	const auto axiom = m_datas.front().nonterminal;
 	for (const auto& next : nextToProcess)
 	{
@@ -238,7 +238,7 @@ void GeneratorSLR::TransitionsToTable(const std::map<std::string, std::variant<s
 	++rowNum;
 }
 
-std::set<std::set<std::pair<size_t, size_t>>> GeneratorSLR::GetNextToProcess(const std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions) const
+std::set<std::set<std::pair<size_t, size_t>>> GeneratorSLR::GetNextToProcess() const
 {
 	std::set<std::set<std::pair<size_t, size_t>>> nextToProcess;
 	for (const auto& row : m_table)
