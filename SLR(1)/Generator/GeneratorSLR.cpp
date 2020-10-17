@@ -263,16 +263,25 @@ std::set<std::set<std::pair<size_t, size_t>>> GeneratorSLR::GetNextToProcess() c
 
 void GeneratorSLR::Print(std::ostream& output) const
 {
-	constexpr auto isDebugMode = false;
-
-	if (!isDebugMode)
+	if (constexpr auto isDebugMode = false; !isDebugMode)
 	{
-		output << "Number" << TAB;
+		output << "Number" << TAB << "Char" << TAB;
 		PrintInfoVector(output, m_chars, TAB);
 		output << std::endl;
 		for (size_t i = 0; i < m_table.size(); ++i)
 		{
 			output << i << TAB;
+			if (!i)
+			{
+				output << "-";
+			}
+			else
+			{
+				const auto pos = m_mainColumn[i - 1].cbegin();
+				const auto ch = m_datas[pos->first].terminals[pos->second];
+				output << ch;
+			}
+			output << TAB;
 			for (const auto& action : m_table[i])
 			{
 				output << std::visit([this](auto&& arg) {
