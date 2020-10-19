@@ -312,59 +312,62 @@ void GeneratorSLR::Print(std::ostream& output) const
 	}
 	else
 	{
-	output << "Number" << TAB << "Char" << TAB;
-	PrintInfoVector(output, m_chars, TAB);
-	output << std::endl;
-	for (size_t i = 0; i < m_table.size(); ++i)
-	{
-		output << i << TAB;
-		if (!i)
-		{
-			output << "Init";
-		}
-		else
-		{
-			std::string bla = "[";
-			for (const auto& pos : m_mainColumn[i - 1])
-			{
-				const auto ch = m_datas[pos.first].terminals[pos.second];
-				bla += ch + std::to_string(pos.first) + "," + std::to_string(pos.second) + "+";
-			}
-			bla += "]";
-			output << bla;
-		}
-		output << TAB;
-		for (const auto& action : m_table[i])
-		{
-			output << std::visit([this](auto&& arg) {
-				using T = std::decay_t<decltype(arg)>;
-				if constexpr (std::is_same_v<T, size_t>)
-				{
-					return "R" + std::to_string(arg);
-				}
-				else if constexpr (std::is_same_v<T, std::set<std::pair<size_t, size_t>>>)
-				{
-					if (arg.empty())
-					{
-						return std::string("-");
-					}
-
-					std::string bla;
-					for (const auto& pos : arg)
-					{
-						const auto ch = m_datas[pos.first].terminals[pos.second];
-						bla += ch + std::to_string(pos.first) + "," + std::to_string(pos.second) + "+";
-					}
-					return bla;
-				}
-				else
-				{
-					static_assert(always_false_v<T>, "non-exhaustive visitor!");
-				}
-			}, action);
-			output << " ";
-		}
+		output << "Number" << TAB << "Char" << TAB;
+		PrintInfoVector(output, m_chars, TAB);
 		output << std::endl;
-	}
+		for (size_t i = 0; i < m_table.size(); ++i)
+		{
+			output << i << TAB;
+			if (!i)
+			{
+				output << "Init";
+			}
+			else
+			{
+				size_t q = 0;
+				std::string bla;
+				for (const auto& pos : m_mainColumn[i - 1])
+				{
+					++q;
+					const auto ch = m_datas[pos.first].terminals[pos.second];
+					bla += ch + std::to_string(pos.first) + "," + std::to_string(pos.second) + ((q != m_mainColumn[i - 1].size()) ? "+" : "");
+				}
+				output << "[" << bla << "]";
+			}
+			output << TAB;
+			for (const auto& action : m_table[i])
+			{
+				output << std::visit([this](auto&& arg) {
+					using T = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same_v<T, size_t>)
+					{
+						return "R" + std::to_string(arg);
+					}
+					else if constexpr (std::is_same_v<T, std::set<std::pair<size_t, size_t>>>)
+					{
+						if (arg.empty())
+						{
+							return std::string("-");
+						}
+						
+						size_t q = 0;
+						std::string bla;
+						for (const auto& pos : arg)
+						{
+							++q;
+							const auto ch = m_datas[pos.first].terminals[pos.second];
+							bla += ch + std::to_string(pos.first) + "," + std::to_string(pos.second) + ((q != arg.size()) ? "+" : "");
+						}
+						return bla;
+					}
+					else
+					{
+						static_assert(always_false_v<T>, "non-exhaustive visitor!");
+					}
+				}, action);
+				output << " ";
+			}
+			output << std::endl;
+		}
 	}
 }
