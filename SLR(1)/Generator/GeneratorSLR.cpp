@@ -44,10 +44,13 @@ std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirst(const st
 	{
 		for (const auto& rule : rules)
 		{
-			if ((rule.nonterminal == firstProcessingRight) && (rule.nonterminal != processingRule.nonterminal) && (rule.terminals != processingRule.terminals))
+			if (rule.nonterminal == firstProcessingRight)
 			{
-				const auto bla = GetFirst(rules, rule);
-				std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
+				if ((rule.nonterminal != processingRule.nonterminal) && (rule.terminals != processingRule.terminals))
+				{
+					const auto bla = GetFirst(rules, rule);
+					std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
+				}
 				result.emplace_back(rule.nonterminal, std::make_pair(rulePos, 0));
 			}
 		}
@@ -190,7 +193,8 @@ std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>
 
 		if (IsNonterminal(right.front()))
 		{
-			for (const auto& [ch, pos] : GetFirstByNonTerminal(m_datas, right.front()))
+			const auto first = GetFirstByNonTerminal(m_datas, right.front());
+			for (const auto& [ch, pos] : first)
 			{
 				std::get<0>(transitions[right.front()]).insert(pos);
 			}
@@ -320,22 +324,13 @@ void GeneratorSLR::Print(std::ostream& output) const
 		}
 		else
 		{
-			std::string bla;
-			if (i > m_mainColumn.size())
+			std::string bla = "[";
+			for (const auto& pos : m_mainColumn[i - 1])
 			{
-				bla = "[Undef]";
+				const auto ch = m_datas[pos.first].terminals[pos.second];
+				bla += ch + std::to_string(pos.first) + "," + std::to_string(pos.second) + "+";
 			}
-			else
-			{
-				bla = "[";
-				for (const auto& pos : m_mainColumn[i - 1])
-				{
-					const auto ch = m_datas[pos.first].terminals[pos.second];
-					bla += ch + std::to_string(pos.first) + "," + std::to_string(pos.second) + "+";
-				}
-				bla += "]";
-			}
-
+			bla += "]";
 			output << bla;
 		}
 		output << TAB;

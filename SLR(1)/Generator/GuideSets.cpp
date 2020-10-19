@@ -200,15 +200,13 @@ void Bla(std::vector<OutputDataGuideSets>& outputDatas, const std::vector<std::s
 	fromLL::BuildingFirstRelationship(outputDatas, transitions, characters);
 	fromLL::BuildingFirstPlusRelationship(transitions);
 
-	std::cout << ">> Rules:" << std::endl;
 	for (const auto& outputData : outputDatas)
 	{
-		std::cout << TAB << outputData.nonterminal << SPACE << DELIMITER << SPACE;
+		std::cout << outputData.nonterminal << SPACE << DELIMITER << SPACE;
 		PrintInfoVector(std::cout, outputData.terminals, SPACE);
 		std::cout << std::endl;
 	}
-	std::cout << std::endl;
-	/*std::cout << ">> First*:" << std::endl;
+	std::cout << std::endl << std::endl << std::endl;
 	for (const auto& nonTerminal : nonterminals)
 	{
 		const auto it = std::find_if(transitions.cbegin(), transitions.cend(), [&nonTerminal](const auto& row) {
@@ -224,10 +222,10 @@ void Bla(std::vector<OutputDataGuideSets>& outputDatas, const std::vector<std::s
 			}
 		}
 
-		std::cout << TAB << nonTerminal << SPACE << DELIMITER << SPACE;
+		std::cout << nonTerminal << SPACE << DELIMITER << SPACE;
 		PrintInfoVector(std::cout, bla, SPACE);
 		std::cout << std::endl;
-	}*/
+	}
 }
 
 bool IsReplenishedGrammar(const std::vector<OutputDataGuideSets>& outputDatas)
