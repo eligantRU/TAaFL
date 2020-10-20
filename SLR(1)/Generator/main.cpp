@@ -3,6 +3,21 @@
 #include <ctime>
 #include <iostream>
 
+namespace
+{
+
+void Bla(std::ostream& fileOutput, const std::vector<OutputDataGuideSets>& outputDatas)
+{
+	for (const auto& outputData : outputDatas)
+	{
+		fileOutput << outputData.nonterminal << SPACE << DELIMITER << SPACE;
+		PrintInfoVector(fileOutput, outputData.terminals, SPACE);
+		fileOutput << std::endl;
+	}
+}
+
+}
+
 int main(int argc, char* argv[])
 {
 	if (argc != 3)
@@ -23,6 +38,11 @@ int main(int argc, char* argv[])
 
 	std::srand(unsigned(std::time(nullptr)));
 
-	GeneratorSLR generator(GetFormingGuideSets(fileInput));
+	const auto bla = GetFormingGuideSets(fileInput);
+
+	std::ofstream grammarStrm("grammar.txt");
+	Bla(grammarStrm, bla);
+
+	GeneratorSLR generator(bla);
 	generator.Print(fileOutput);
 }
