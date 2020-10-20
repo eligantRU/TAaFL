@@ -228,11 +228,11 @@ void Bla(std::vector<OutputDataGuideSets>& outputDatas, const std::vector<std::s
 	}
 }
 
-bool IsReplenishedGrammar(const std::vector<OutputDataGuideSets>& outputDatas)
+bool IsReplenishedGrammar(const std::vector<InputData>& inputDatas)
 {
-	for (const auto& outputData : outputDatas)
+	for (const auto& outputData : inputDatas)
 	{
-		if (auto it = std::find(outputData.terminals.cbegin(), outputData.terminals.cend(), outputDatas.front().nonterminal);
+		if (auto it = std::find(outputData.terminals.cbegin(), outputData.terminals.cend(), inputDatas.front().nonterminal);
 			it != outputData.terminals.cend())
 		{
 			return false;
@@ -265,23 +265,6 @@ void Forming(const std::vector<InputData>& inputDatas, std::vector<OutputDataGui
 		std::for_each(temporaryVector.begin(), temporaryVector.end(), [&](const InputData& data) { outputDatas.push_back({ data.nonterminal, data.terminals }); });
 	}
 
-	if (!IsReplenishedGrammar(outputDatas))
-	{
-		std::string randomNonterminal;
-		while (true)
-		{
-			randomNonterminal = "<" + GetRandomString() + ">";
-
-			if (IsCheckUniqueness(nonterminals, randomNonterminal))
-			{
-				break;
-			}
-		}
-
-		nonterminals.insert(nonterminals.begin(), randomNonterminal);
-		outputDatas.insert(outputDatas.begin(), { randomNonterminal, std::vector<std::string>{ outputDatas.front().nonterminal } });
-	}
-
 	for (auto& [left, right, guide] : outputDatas)
 	{
 		if (const auto axiom = outputDatas.front().nonterminal; left == axiom)
@@ -295,6 +278,28 @@ void Forming(const std::vector<InputData>& inputDatas, std::vector<OutputDataGui
 	}
 }
 
+void MakeReplenished(std::vector<InputData>& inputDatas, std::vector<std::string>& nonterminals)
+{
+	if (IsReplenishedGrammar(inputDatas))
+	{
+		return;
+	}
+
+	std::string randomNonterminal;
+	while (true)
+	{
+		randomNonterminal = "<" + GetRandomString() + ">";
+
+		if (IsCheckUniqueness(nonterminals, randomNonterminal))
+		{
+			break;
+		}
+	}
+
+	nonterminals.insert(nonterminals.begin(), randomNonterminal);
+	inputDatas.insert(inputDatas.begin(), { randomNonterminal, std::vector<std::string>{ inputDatas.front().nonterminal } });
+}
+
 std::vector<OutputDataGuideSets> GetFormingGuideSets(std::istream& fileInput)
 {
 	std::vector<InputData> inputDatas;
@@ -304,6 +309,7 @@ std::vector<OutputDataGuideSets> GetFormingGuideSets(std::istream& fileInput)
 	std::vector<std::string> terminals;
 	
 	FillingData(fileInput, inputDatas, nonterminals, terminals);
+	MakeReplenished(inputDatas, nonterminals);
 	RemoveEmptyRules(inputDatas, terminals);
 	Forming(inputDatas, outputDatas, nonterminals);
 
