@@ -75,7 +75,7 @@ void SyntacticalAnalyzer::Run()
 		}
 		else if (symbol.state == StateSymbol::None)
 		{
-			throw std::exception(("SLR(1) failure: none-state at " + std::to_string(currLexeme.linePos) + ":" + std::to_string(currLexeme.linePos)).c_str());
+			throw std::exception(("SLR(1) failure: none-state at " + std::to_string(currLexeme.lineNum) + ":" + std::to_string(currLexeme.linePos)).c_str());
 		}
 	}
 }

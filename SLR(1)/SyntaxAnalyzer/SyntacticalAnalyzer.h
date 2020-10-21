@@ -1,13 +1,14 @@
 #pragma once
-#include "Helper.h"
-#include "LRData.h"
-#include "../../Lexer/Lexer.hpp"
-#include "Logger.h"
+
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <list>
 #include <set>
+
+#include "../../Lexer/Lexer.hpp"
+#include "Helper.h"
+#include "LRData.h"
 
 class SyntacticalAnalyzer
 {

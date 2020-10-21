@@ -139,14 +139,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Helper.cpp" />
-    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="LRReader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SyntacticalAnalyzer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Helper.h" />
-    <ClInclude Include="Logger.h" />
     <ClInclude Include="LRData.h" />
     <ClInclude Include="LRReader.h" />
     <ClInclude Include="SyntacticalAnalyzer.h" />
