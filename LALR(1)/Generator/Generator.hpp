@@ -1,0 +1,271 @@
+#include <set>
+#include <map>
+
+#include "Common.h"
+#include "Table.hpp"
+
+namespace
+{
+
+template<class> inline constexpr bool always_false_v = false;
+
+template <class T>
+T Uniqify(const T & c)
+{
+	std::set bla(c.cbegin(), c.cend());
+	return { bla.cbegin(), bla.cend() };
+}
+
+std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirst(const std::vector<Rule>& grammar, Rule processingRule)
+{
+	std::vector<std::pair<std::string, std::pair<size_t, size_t>>> result;
+	
+	const auto firstProcessingRight = processingRule.right.front();
+	const auto rulePos = std::distance(grammar.cbegin(), std::find_if(grammar.cbegin(), grammar.cend(), [&processingRule](const auto& rule) {
+		return (rule.left == processingRule.left) && (rule.right == processingRule.right);
+	}));
+
+	if (IsNonTerminal(firstProcessingRight))
+	{
+		for (const auto& rule : grammar)
+		{
+			if (rule.left == firstProcessingRight)
+			{
+				if ((rule.left != processingRule.left) && (rule.right != processingRule.right))
+				{
+					const auto bla = GetFirst(grammar, rule);
+					std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
+				}
+				result.emplace_back(rule.left, std::make_pair(rulePos, 0));
+			}
+		}
+	}
+	else
+	{
+		result = { std::make_pair(firstProcessingRight, std::make_pair(rulePos, 0)) };
+	}
+	return Uniqify(result);
+}
+
+std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirstByNonTerminal(const std::vector<Rule>& grammar, const std::string& nonTerminal)
+{
+	std::vector<std::pair<std::string, std::pair<size_t, size_t>>> result;
+	for (const auto& rule : grammar)
+	{
+		if (rule.left != nonTerminal)
+		{
+			continue;
+		}
+		auto first = GetFirst(grammar, rule);
+		std::copy(first.cbegin(), first.cend(), std::back_inserter(result));
+	}
+	return Uniqify(result);
+}
+
+std::vector<std::string> GetFollow(const std::vector<Rule>& grammar, std::string nonTerminal, std::set<std::string> way = {})
+{
+	std::vector<std::string> result;
+	for (const auto& subRule : grammar)
+	{
+		if (auto it = std::find_if(subRule.right.cbegin(), subRule.right.cend(), [&](std::string_view sv) {
+				return sv == nonTerminal;
+			}); it != subRule.right.cend())
+		{
+			size_t distance = std::distance(subRule.right.cbegin(), it);
+			size_t size = subRule.right.size();
+
+			if ((distance < (size - 1)) && (subRule.right[distance + 1] != nonTerminal))
+			{
+				result.push_back(subRule.right[distance + 1]);
+				const auto first = GetFirstByNonTerminal(grammar, subRule.right[distance + 1]);
+				for (const auto& [ch, pos] : first)
+				{
+					result.push_back(ch);
+				}
+			}
+			else if (distance == (size - 1))
+			{
+				if (!way.count(subRule.left))
+				{
+					auto tmpWay(way);
+					tmpWay.insert(subRule.left);
+					const auto tmp = GetFollow(grammar, subRule.left, tmpWay);
+					std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(result));
+				}
+			}
+		}
+	}
+	return Uniqify(result);
+}
+
+std::vector<std::string> GetUniqueCharacters(const std::vector<Rule>& grammar)
+{
+	std::set<std::string> result;
+	for (const auto& [left, right] : grammar)
+	{
+		result.emplace(left);
+		result.insert(right.cbegin(), right.cend());
+	}
+	std::vector<std::string> vecResult(result.cbegin(), result.cend());
+	vecResult.erase(std::remove_if(vecResult.begin(), vecResult.end(), [&grammar](const auto& ch) {
+		const auto axiom = grammar.front().left;
+		return (ch == TERMINAL_END_SEQUENCE) || (ch == axiom);
+	}), vecResult.end());
+	vecResult.insert(vecResult.begin(), grammar.front().left);
+	vecResult.insert(vecResult.end(), TERMINAL_END_SEQUENCE);
+	return vecResult;
+}
+
+std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>> ColdStart(const std::vector<Rule>& grammar)
+{
+	const auto axiom = grammar.front().left;
+
+	std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>> transitions;
+	for (size_t i = 0; i < grammar.size(); ++i)
+	{
+		const auto& [left, right] = grammar[i];
+		if (left != axiom)
+		{
+			continue;
+		}
+
+		if (right.size() == 1)
+		{
+			transitions[right.front()] = i;
+		}
+		else
+		{
+			std::get<0>(transitions[right.front()]).insert(std::make_pair(i, 0));
+		}
+
+		if (IsNonTerminal(right.front()))
+		{
+			const auto first = GetFirstByNonTerminal(grammar, right.front());
+			for (const auto& [ch, pos] : first)
+			{
+				std::get<0>(transitions[right.front()]).insert(pos);
+			}
+		}
+	}
+	return transitions;
+}
+
+void TransitionsToTable(const std::vector<Rule>& grammar, const std::vector<std::string> chars,
+	const std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions,
+	Table<std::variant<Shift, Reduce>>& table)
+{
+	static size_t rowNum = 0;
+
+	table.AddRow(std::remove_reference<decltype(table)>::type::Row(chars.size()));
+	for (const auto& [k, v] : transitions)
+	{
+		std::visit([&k, &grammar, &chars, &table](auto&& arg) {
+			using T = std::decay_t<decltype(arg)>;
+			if constexpr (std::is_same_v<T, size_t>)
+			{
+				const auto columnNum = std::distance(chars.cbegin(), std::find(chars.cbegin(), chars.cend(), k));
+				table[rowNum][columnNum] = Reduce{ arg };
+			}
+			else if constexpr (std::is_same_v<T, std::set<std::pair<size_t, size_t>>>)
+			{
+				for (const auto& pos : arg)
+				{
+					const auto ch = grammar[pos.first].right[pos.second];
+					const auto columnNum = std::distance(chars.cbegin(), std::find(chars.cbegin(), chars.cend(), ch));
+					std::get<0>(table[rowNum][columnNum]).value.insert(pos);
+				}
+			}
+			else
+			{
+				static_assert(always_false_v<T>, "non-exhaustive visitor!");
+			}
+		}, v);
+	}
+	++rowNum;
+}
+
+std::set<std::set<std::pair<size_t, size_t>>> GetNextToProcess(const Table<std::variant<Shift, Reduce>>& table,
+	const std::vector<std::set<std::pair<size_t, size_t>>>& mainColumn)
+{
+	std::set<std::set<std::pair<size_t, size_t>>> nextToProcess;
+	for (const auto& row : table)
+	{
+		for (const auto& cell : row)
+		{
+			if (std::visit([&mainColumn](auto&& arg) {
+					using T = std::decay_t<decltype(arg)>;
+					if constexpr (std::is_same_v<T, Reduce>)
+					{
+						return false;
+					}
+					else if constexpr (std::is_same_v<T, Shift>)
+					{
+						return !arg.value.empty() && (std::find(mainColumn.cbegin(), mainColumn.cend(), arg.value) == mainColumn.cend());
+					}
+					else
+					{
+						static_assert(always_false_v<T>, "non-exhaustive visitor!");
+					}
+				}, cell))
+			{
+				nextToProcess.insert(std::get<0>(cell).value);
+			}
+		}
+	}
+	return nextToProcess;
+}
+
+}
+
+Table<std::variant<Shift, Reduce>> GetTableSLR(const std::vector<Rule>& grammar)
+{
+	const auto chars = GetUniqueCharacters(grammar);
+	
+	Table<std::variant<Shift, Reduce>> table(chars); // TODO: Table<std::optional<std::variant<Shift, Reduce>>> table;
+	std::vector<std::set<std::pair<size_t, size_t>>> mainColumn;
+
+	auto transitions = ColdStart(grammar);
+	TransitionsToTable(grammar, chars, transitions, table);
+	transitions.clear();
+	
+	auto nextToProcess = GetNextToProcess(table, mainColumn);
+	do
+	{
+		for (const auto& next : nextToProcess)
+		{
+			for (const auto& pos : next)
+			{
+				if (((pos.second + 1) == grammar[pos.first].right.size())
+					|| (((pos.second + 2) == grammar[pos.first].right.size()) && IsEndRule(grammar[pos.first].right.back())))
+				{
+					if (((pos.second + 2) == grammar[pos.first].right.size()))
+					{
+						transitions[TERMINAL_END_SEQUENCE] = pos.first;
+						continue;
+					}
+
+					const auto follows = GetFollow(grammar, grammar[pos.first].left);
+					for (const auto& follow : follows)
+					{
+						transitions[follow] = pos.first;
+					}
+				}
+				else
+				{
+					std::get<0>(transitions[grammar[pos.first].right[pos.second + 1]]).insert(std::make_pair(pos.first, pos.second + 1));
+					const auto first = GetFirstByNonTerminal(grammar, grammar[pos.first].right[pos.second + 1]);
+					for (const auto& [ch, pos] : first)
+					{
+						std::get<0>(transitions[ch]).insert(pos);
+					}
+				}
+			}
+
+			mainColumn.emplace_back(next);
+			TransitionsToTable(grammar, chars, transitions, table);
+			transitions.clear();
+		}
+		nextToProcess = GetNextToProcess(table, mainColumn);
+	} while (!nextToProcess.empty());
+	return table;
+}
