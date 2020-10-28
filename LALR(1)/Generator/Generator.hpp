@@ -151,15 +151,16 @@ std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>
 }
 
 void TransitionsToTable(const std::vector<Rule>& grammar, const std::vector<std::string> chars,
+	const std::vector<std::set<std::pair<size_t, size_t>>>& mainColumn,
 	const std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions,
-	Table<std::variant<Shift, Reduce>>& table)
+	Table<std::optional<std::variant<Shift, Reduce>>>& table)
 {
 	static size_t rowNum = 0;
 
 	table.AddRow(std::remove_reference<decltype(table)>::type::Row(chars.size()));
 	for (const auto& [k, v] : transitions)
 	{
-		std::visit([&k, &grammar, &chars, &table](auto&& arg) {
+		std::visit([&k, &grammar, &chars, &mainColumn, &table](auto&& arg) {
 			using T = std::decay_t<decltype(arg)>;
 			if constexpr (std::is_same_v<T, size_t>)
 			{
@@ -172,7 +173,15 @@ void TransitionsToTable(const std::vector<Rule>& grammar, const std::vector<std:
 				{
 					const auto ch = grammar[pos.first].right[pos.second];
 					const auto columnNum = std::distance(chars.cbegin(), std::find(chars.cbegin(), chars.cend(), ch));
-					std::get<0>(table[rowNum][columnNum]).value.insert(pos);
+					
+					if (auto& cell = table[rowNum][columnNum]; cell)
+					{
+						std::get<Shift>(*cell).value.insert(pos);
+					}
+					else
+					{
+						cell = Shift{ ch, { pos } };
+					}
 				}
 			}
 			else
@@ -184,7 +193,7 @@ void TransitionsToTable(const std::vector<Rule>& grammar, const std::vector<std:
 	++rowNum;
 }
 
-std::set<std::set<std::pair<size_t, size_t>>> GetNextToProcess(const Table<std::variant<Shift, Reduce>>& table,
+std::set<std::set<std::pair<size_t, size_t>>> GetNextToProcess(const Table<std::optional<std::variant<Shift, Reduce>>>& table,
 	const std::vector<std::set<std::pair<size_t, size_t>>>& mainColumn)
 {
 	std::set<std::set<std::pair<size_t, size_t>>> nextToProcess;
@@ -192,7 +201,7 @@ std::set<std::set<std::pair<size_t, size_t>>> GetNextToProcess(const Table<std::
 	{
 		for (const auto& cell : row)
 		{
-			if (std::visit([&mainColumn](auto&& arg) {
+			if (cell && std::visit([&mainColumn](auto&& arg) {
 					using T = std::decay_t<decltype(arg)>;
 					if constexpr (std::is_same_v<T, Reduce>)
 					{
@@ -204,11 +213,11 @@ std::set<std::set<std::pair<size_t, size_t>>> GetNextToProcess(const Table<std::
 					}
 					else
 					{
-						static_assert(always_false_v<T>, "non-exhaustive visitor!");
+						static_assert(always_false_v<T>, "Non-exhaustive visitor!");
 					}
-				}, cell))
+				}, *cell))
 			{
-				nextToProcess.insert(std::get<0>(cell).value);
+				nextToProcess.insert(std::get<0>(*cell).value);
 			}
 		}
 	}
@@ -217,15 +226,21 @@ std::set<std::set<std::pair<size_t, size_t>>> GetNextToProcess(const Table<std::
 
 }
 
-Table<std::variant<Shift, Reduce>> GetTableSLR(const std::vector<Rule>& grammar)
+Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<Rule>& grammar)
 {
 	const auto chars = GetUniqueCharacters(grammar);
 	
-	Table<std::variant<Shift, Reduce>> table(chars); // TODO: Table<std::optional<std::variant<Shift, Reduce>>> table;
+	Table<std::optional<std::variant<Shift, Reduce>>> table(chars, [](const auto& cell) {
+		return cell
+			? std::visit([](auto&& arg) {
+					return ToString(arg);
+				}, *cell)
+			: "-";
+	});
 	std::vector<std::set<std::pair<size_t, size_t>>> mainColumn;
 
 	auto transitions = ColdStart(grammar);
-	TransitionsToTable(grammar, chars, transitions, table);
+	TransitionsToTable(grammar, chars, mainColumn, transitions, table);
 	transitions.clear();
 	
 	auto nextToProcess = GetNextToProcess(table, mainColumn);
@@ -262,7 +277,7 @@ Table<std::variant<Shift, Reduce>> GetTableSLR(const std::vector<Rule>& grammar)
 			}
 
 			mainColumn.emplace_back(next);
-			TransitionsToTable(grammar, chars, transitions, table);
+			TransitionsToTable(grammar, chars, mainColumn, transitions, table);
 			transitions.clear();
 		}
 		nextToProcess = GetNextToProcess(table, mainColumn);

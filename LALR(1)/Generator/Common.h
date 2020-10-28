@@ -33,18 +33,16 @@ constexpr std::string ToString(T arg)
 	}
 };
 
+// TODO: expicit constructor with contact check & immutable model
 struct Shift
 {
+	std::string ch;
 	std::set<std::pair<size_t, size_t>> value;
 
 	operator std::string()
 	{
-		if (value.empty())
-		{
-			return "-";
-		}
-
-		std::string res = "S<";
+		// return "S" + std::to_string(1 + std::distance(mainColumn.cbegin(), std::find(mainColumn.cbegin(), mainColumn.cend(), value)));
+		std::string res;
 		for (size_t i = 0; i < value.size(); ++i)
 		{
 			auto it = value.cbegin();
@@ -52,11 +50,11 @@ struct Shift
 			const auto& [row, col] = *it;
 			res += (i ? "|" : "") + ToString(row) + "," + ToString(col);
 		}
-		return res + ">";
+		return ch + "(" + res + ")";
 	}
 };
 
-struct Reduce
+struct Reduce // TODO: optimize it
 {
 	size_t value;
 
