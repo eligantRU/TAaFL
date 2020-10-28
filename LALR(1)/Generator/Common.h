@@ -12,17 +12,36 @@ constexpr auto USE_OPTIMIZED_TABLE = false;
 
 }
 
+constexpr auto SPACE = " ";
+constexpr auto SEPARATOR = "=>";
+constexpr auto NONTERMINAL_END_SEQUENCE = "e";
+constexpr auto TERMINAL_END_SEQUENCE = "$";
+constexpr auto NONTERMINAL_GEN_PREFIX = "_gen";
+
 struct Rule
 {
 	std::string left;
 	std::vector<std::string> right;
 };
 
-constexpr auto SPACE = " ";
-constexpr auto SEPARATOR = "=>";
-constexpr auto NONTERMINAL_END_SEQUENCE = "e";
-constexpr auto TERMINAL_END_SEQUENCE = "$";
-constexpr auto NONTERMINAL_GEN_PREFIX = "_gen";
+class ShiftReduceConflict
+	:public std::domain_error
+{
+public:
+	explicit ShiftReduceConflict(const std::string_view& msg, std::string ch)
+		:std::domain_error(msg.data())
+		,m_collisionChar(std::move(ch))
+	{
+	}
+
+	std::string CollisionChar() const
+	{
+		return m_collisionChar;
+	}
+
+private:
+	std::string m_collisionChar;
+};
 
 template <class T>
 constexpr std::string ToString(T arg)

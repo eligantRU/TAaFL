@@ -46,28 +46,39 @@ public:
 	{
 		return m_rows[i];
 	}
+
+	bool empty() const
+	{
+		return m_rows.size();
+	}
 	
-	auto cbegin() const {
+	auto cbegin() const
+	{
 		return m_rows.cbegin();
 	}
 	
-	auto cend() const {
+	auto cend() const
+	{
 		return m_rows.cend();
 	}
 
-	auto begin() const {
+	auto begin() const
+	{
 		return m_rows.begin();
 	}
 	
-	auto end() const {
+	auto end() const
+	{
 		return m_rows.end();
 	}
 
-	auto begin() {
+	auto begin()
+	{
 		return m_rows.begin();
 	}
 	
-	auto end() {
+	auto end()
+	{
 		return m_rows.end();
 	}
 

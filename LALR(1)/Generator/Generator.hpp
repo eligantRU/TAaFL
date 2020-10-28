@@ -65,32 +65,38 @@ std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirstByNonTerm
 std::vector<std::string> GetFollow(const std::vector<Rule>& grammar, std::string nonTerminal, std::set<std::string> way = {})
 {
 	std::vector<std::string> result;
-	for (const auto& subRule : grammar)
+	for (const auto& [left, right] : grammar)
 	{
-		if (auto it = std::find_if(subRule.right.cbegin(), subRule.right.cend(), [&](std::string_view sv) {
+		if (auto it = std::find_if(right.cbegin(), right.cend(), [&](std::string_view sv) {
 				return sv == nonTerminal;
-			}); it != subRule.right.cend())
+			}); it != right.cend())
 		{
-			size_t distance = std::distance(subRule.right.cbegin(), it);
-			size_t size = subRule.right.size();
+			for (size_t i = 0; i < right.size(); ++i)
+			{
+				if (right[i] == nonTerminal)
+				{
+					size_t distance = i;
+					size_t size = right.size();
 
-			if ((distance < (size - 1)) && (subRule.right[distance + 1] != nonTerminal))
-			{
-				result.push_back(subRule.right[distance + 1]);
-				const auto first = GetFirstByNonTerminal(grammar, subRule.right[distance + 1]);
-				for (const auto& [ch, pos] : first)
-				{
-					result.push_back(ch);
-				}
-			}
-			else if (distance == (size - 1))
-			{
-				if (!way.count(subRule.left))
-				{
-					auto tmpWay(way);
-					tmpWay.insert(subRule.left);
-					const auto tmp = GetFollow(grammar, subRule.left, tmpWay);
-					std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(result));
+					if (distance < (size - 1))
+					{
+						result.push_back(right[distance + 1]);
+						const auto first = GetFirstByNonTerminal(grammar, right[distance + 1]);
+						for (const auto& [ch, pos] : first)
+						{
+							result.push_back(ch);
+						}
+					}
+					else if (distance == (size - 1))
+					{
+						if (!way.count(left))
+						{
+							auto tmpWay(way);
+							tmpWay.insert(left);
+							const auto tmp = GetFollow(grammar, left, tmpWay);
+							std::copy(tmp.cbegin(), tmp.cend(), std::back_inserter(result));
+						}
+					}
 				}
 			}
 		}
@@ -153,14 +159,12 @@ std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>
 void TransitionsToTable(const std::vector<Rule>& grammar, const std::vector<std::string> chars,
 	std::shared_ptr<std::vector<std::set<std::pair<size_t, size_t>>>> mainColumn,
 	const std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions,
-	Table<std::optional<std::variant<Shift, Reduce>>>& table)
+	Table<std::optional<std::variant<Shift, Reduce>>>& table, size_t& rowNum)
 {
-	static size_t rowNum = 0;
-
 	table.AddRow(std::remove_reference<decltype(table)>::type::Row(chars.size()));
 	for (const auto& [k, v] : transitions)
 	{
-		std::visit([&k, &grammar, &chars, &mainColumn, &table](auto&& arg) {
+		std::visit([&k, &grammar, &chars, &mainColumn, &table, &rowNum](auto&& arg) {
 			using T = std::decay_t<decltype(arg)>;
 			if constexpr (std::is_same_v<T, size_t>)
 			{
@@ -237,10 +241,12 @@ Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<
 				}, *cell)
 			: "-";
 	});
-	auto mainColumn = std::make_shared<std::vector<std::set<std::pair<size_t, size_t>>>>();
+
+	auto mainColumn = std::make_shared<std::vector<std::set<std::pair<size_t, size_t>>>>(); // TODO:
+	size_t rowNum = 0;
 
 	auto transitions = ColdStart(grammar);
-	TransitionsToTable(grammar, chars, mainColumn, transitions, table);
+	TransitionsToTable(grammar, chars, mainColumn, transitions, table, rowNum);
 	transitions.clear();
 	
 	auto nextToProcess = GetNextToProcess(table, mainColumn);
@@ -266,7 +272,7 @@ Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<
 						{
 							if (!std::get<std::set<std::pair<size_t, size_t>>>(transitions[follow]).empty())
 							{
-								throw std::domain_error("Not an SLR(1) grammar");
+								throw ShiftReduceConflict("Not an SLR(1) grammar", follow);
 							}
 						}
 						transitions[follow] = pos.first;
@@ -280,7 +286,7 @@ Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<
 					{
 						if (std::holds_alternative<size_t>(transitions[ch]))
 						{
-							throw std::domain_error("Not an SLR(1) grammar");
+							throw ShiftReduceConflict("Not an SLR(1) grammar", ch);
 						}
 						std::get<0>(transitions[ch]).insert(pos);
 					}
@@ -288,7 +294,7 @@ Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<
 			}
 
 			mainColumn->emplace_back(next);
-			TransitionsToTable(grammar, chars, mainColumn, transitions, table);
+			TransitionsToTable(grammar, chars, mainColumn, transitions, table, rowNum);
 			transitions.clear();
 		}
 		nextToProcess = GetNextToProcess(table, mainColumn);
