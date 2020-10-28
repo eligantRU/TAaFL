@@ -280,3 +280,39 @@ void PrintGrammar(std::ostream& output, const std::vector<Rule>& rules)
 		output << std::endl;
 	}
 }
+
+std::vector<Rule> LALR2SLR(const std::vector<Rule>& baseGrammar, size_t ruleNum)
+{
+	std::vector<Rule> grammar(baseGrammar);
+
+	const auto conflictNonTerminal = baseGrammar[ruleNum].left;
+
+	std::vector<std::string> nonTerminals;
+	for (auto& [left, right]: grammar)
+	{
+		for (auto& ch : right)
+		{
+			ch = (ch == conflictNonTerminal) ? nonTerminals.emplace_back("<" + GetRandomString() + ">") : ch;
+		}
+	}
+
+	const auto grammarCopy(grammar);
+	for (const auto& [left, right] : grammarCopy)
+	{
+		if (left != conflictNonTerminal)
+		{
+			continue;
+		}
+
+		for (const auto& nonTerminal : nonTerminals)
+		{
+			grammar.push_back({ nonTerminal, right });
+		}
+	}
+	
+	decltype(grammar) result;
+	std::copy_if(grammar.cbegin(), grammar.cend(), std::back_inserter(result), [&conflictNonTerminal](const auto& rule) {
+		return rule.left != conflictNonTerminal;
+	});
+	return result;
+}

@@ -28,19 +28,19 @@ class ShiftReduceConflict
 	:public std::domain_error
 {
 public:
-	explicit ShiftReduceConflict(std::pair<size_t, size_t> pos)
+	explicit ShiftReduceConflict(size_t ruleNum)
 		:std::domain_error("Shift/Reduce conflict - not a SLR(1) grammar")
-		,m_pos(pos)
+		,m_ruleNum(ruleNum)
 	{
 	}
 
-	std::pair<size_t, size_t> Position() const
+	size_t RuleNum() const
 	{
-		return m_pos;
+		return m_ruleNum;
 	}
 
 private:
-	std::pair<size_t, size_t> m_pos;
+	size_t m_ruleNum;
 };
 
 template <class T>
