@@ -257,6 +257,17 @@ std::vector<Rule> GetGrammar(std::istream& input)
 	RemoveEmptyRules(rules, terminals);
 	AddEndTerminalToAxiom(rules);
 
+	if constexpr (Settings::USE_LEXER)
+	{
+		for (auto& [left, right] : rules)
+		{
+			std::transform(right.cbegin(), right.cend(), right.begin(), [](const auto& ch) {
+				return IsNonTerminal(ch)
+					? ch
+					: (IsEndRule(ch) ? ch : LexemeTypeToString(ClassifyLexeme(ch)));
+			});
+		}
+	}
 	return rules;
 }
 

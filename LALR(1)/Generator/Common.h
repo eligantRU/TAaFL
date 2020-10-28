@@ -4,6 +4,14 @@
 #include <vector>
 #include <set>
 
+namespace Settings
+{
+
+constexpr auto USE_LEXER = false;
+constexpr auto USE_OPTIMIZED_TABLE = false;
+
+}
+
 struct Rule
 {
 	std::string left;
@@ -33,33 +41,47 @@ constexpr std::string ToString(T arg)
 	}
 };
 
-// TODO: expicit constructor with contact check & immutable model
+// TODO: expicit constructor with contract check & immutable model
 struct Shift
 {
 	std::string ch;
+	std::shared_ptr<std::vector<std::set<std::pair<size_t, size_t>>>> mainColumn;
 	std::set<std::pair<size_t, size_t>> value;
 
 	operator std::string()
 	{
-		// return "S" + std::to_string(1 + std::distance(mainColumn.cbegin(), std::find(mainColumn.cbegin(), mainColumn.cend(), value)));
-		std::string res;
-		for (size_t i = 0; i < value.size(); ++i)
+		if constexpr (Settings::USE_OPTIMIZED_TABLE)
 		{
-			auto it = value.cbegin();
-			std::advance(it, i);
-			const auto& [row, col] = *it;
-			res += (i ? "|" : "") + ToString(row) + "," + ToString(col);
+			return "S" + std::to_string(1 + std::distance(mainColumn->cbegin(), std::find(mainColumn->cbegin(), mainColumn->cend(), value)));
 		}
-		return ch + "(" + res + ")";
+		else
+		{
+			std::string res;
+			for (size_t i = 0; i < value.size(); ++i)
+			{
+				auto it = value.cbegin();
+				std::advance(it, i);
+				const auto& [row, col] = *it;
+				res += (i ? "|" : "") + ToString(row) + "," + ToString(col);
+			}
+			return ch + "(" + res + ")";
+		}
 	}
 };
 
-struct Reduce // TODO: optimize it
+struct Reduce
 {
 	size_t value;
 
 	operator std::string()
 	{
-		return "R" + ToString(value);
+		if constexpr (Settings::USE_OPTIMIZED_TABLE) // TODO: optimize it
+		{
+			return "R" + ToString(value);
+		}
+		else
+		{
+			return "R" + ToString(value);
+		}
 	}
 };

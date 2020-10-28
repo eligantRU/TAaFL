@@ -151,7 +151,7 @@ std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>
 }
 
 void TransitionsToTable(const std::vector<Rule>& grammar, const std::vector<std::string> chars,
-	const std::vector<std::set<std::pair<size_t, size_t>>>& mainColumn,
+	std::shared_ptr<std::vector<std::set<std::pair<size_t, size_t>>>> mainColumn,
 	const std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions,
 	Table<std::optional<std::variant<Shift, Reduce>>>& table)
 {
@@ -180,7 +180,7 @@ void TransitionsToTable(const std::vector<Rule>& grammar, const std::vector<std:
 					}
 					else
 					{
-						cell = Shift{ ch, { pos } };
+						cell = Shift{ ch, mainColumn, { pos } };
 					}
 				}
 			}
@@ -194,7 +194,7 @@ void TransitionsToTable(const std::vector<Rule>& grammar, const std::vector<std:
 }
 
 std::set<std::set<std::pair<size_t, size_t>>> GetNextToProcess(const Table<std::optional<std::variant<Shift, Reduce>>>& table,
-	const std::vector<std::set<std::pair<size_t, size_t>>>& mainColumn)
+	std::shared_ptr<std::vector<std::set<std::pair<size_t, size_t>>>> mainColumn)
 {
 	std::set<std::set<std::pair<size_t, size_t>>> nextToProcess;
 	for (const auto& row : table)
@@ -209,7 +209,7 @@ std::set<std::set<std::pair<size_t, size_t>>> GetNextToProcess(const Table<std::
 					}
 					else if constexpr (std::is_same_v<T, Shift>)
 					{
-						return !arg.value.empty() && (std::find(mainColumn.cbegin(), mainColumn.cend(), arg.value) == mainColumn.cend());
+						return !arg.value.empty() && (std::find(mainColumn->cbegin(), mainColumn->cend(), arg.value) == mainColumn->cend());
 					}
 					else
 					{
@@ -237,7 +237,7 @@ Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<
 				}, *cell)
 			: "-";
 	});
-	std::vector<std::set<std::pair<size_t, size_t>>> mainColumn;
+	auto mainColumn = std::make_shared<std::vector<std::set<std::pair<size_t, size_t>>>>();
 
 	auto transitions = ColdStart(grammar);
 	TransitionsToTable(grammar, chars, mainColumn, transitions, table);
@@ -262,6 +262,13 @@ Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<
 					const auto follows = GetFollow(grammar, grammar[pos.first].left);
 					for (const auto& follow : follows)
 					{
+						if (std::holds_alternative<std::set<std::pair<size_t, size_t>>>(transitions[follow]))
+						{
+							if (!std::get<std::set<std::pair<size_t, size_t>>>(transitions[follow]).empty())
+							{
+								throw std::domain_error("Not an SLR(1) grammar");
+							}
+						}
 						transitions[follow] = pos.first;
 					}
 				}
@@ -271,12 +278,16 @@ Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<
 					const auto first = GetFirstByNonTerminal(grammar, grammar[pos.first].right[pos.second + 1]);
 					for (const auto& [ch, pos] : first)
 					{
+						if (std::holds_alternative<size_t>(transitions[ch]))
+						{
+							throw std::domain_error("Not an SLR(1) grammar");
+						}
 						std::get<0>(transitions[ch]).insert(pos);
 					}
 				}
 			}
 
-			mainColumn.emplace_back(next);
+			mainColumn->emplace_back(next);
 			TransitionsToTable(grammar, chars, mainColumn, transitions, table);
 			transitions.clear();
 		}
