@@ -272,7 +272,7 @@ Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<
 						{
 							if (!std::get<std::set<std::pair<size_t, size_t>>>(transitions[follow]).empty())
 							{
-								throw ShiftReduceConflict("Not an SLR(1) grammar", follow);
+								throw ShiftReduceConflict(pos);
 							}
 						}
 						transitions[follow] = pos.first;
@@ -286,7 +286,7 @@ Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<
 					{
 						if (std::holds_alternative<size_t>(transitions[ch]))
 						{
-							throw ShiftReduceConflict("Not an SLR(1) grammar", ch);
+							throw ShiftReduceConflict(pos);
 						}
 						std::get<0>(transitions[ch]).insert(pos);
 					}

@@ -7,6 +7,42 @@
 #include "Grammar.hpp"
 #include "Generator.hpp"
 
+std::vector<Rule> FixGrammar(const std::vector<Rule>& baseGrammar, const std::pair<size_t, size_t>& pos)
+{
+	std::vector<Rule> grammar(baseGrammar);
+
+	const auto conflictNonTerminal = baseGrammar[pos.first].left;
+
+	std::vector<std::string> nonTerminals;
+	for (auto& [left, right]: grammar)
+	{
+		for (auto& ch : right)
+		{
+			ch = (ch == conflictNonTerminal) ? nonTerminals.emplace_back("<" + GetRandomString() + ">") : ch;
+		}
+	}
+
+	const auto grammarCopy(grammar);
+	for (const auto& [left, right] : grammarCopy)
+	{
+		if (left != conflictNonTerminal)
+		{
+			continue;
+		}
+
+		for (const auto& nonTerminal : nonTerminals)
+		{
+			grammar.push_back({ nonTerminal, right });
+		}
+	}
+	
+	decltype(grammar) result;
+	std::copy_if(grammar.cbegin(), grammar.cend(), std::back_inserter(result), [&conflictNonTerminal](const auto& rule) {
+		return rule.left != conflictNonTerminal;
+	});
+	return result;
+}
+
 int main(int argc, char* argv[])
 {	
 	try
@@ -28,12 +64,23 @@ int main(int argc, char* argv[])
 
 		std::srand(unsigned(std::time(nullptr)));
 
-		const auto grammar = GetGrammar(inputGrammar);
-		PrintGrammar(outputGrammar, grammar);
-
-		outputTable << GetTableSLR(grammar);
+		auto grammar = GetGrammar(inputGrammar);
+		do
+		{
+			try
+			{
+				outputTable << GetTableSLR(grammar);
+			}
+			catch (const ShiftReduceConflict& ex)
+			{
+				grammar = FixGrammar(grammar, ex.Position());
+				continue;
+			}
+			PrintGrammar(outputGrammar, grammar);
+			break;
+		} while (true);
 	}
-	catch (const std::exception & ex)
+	catch (const std::exception& ex)
 	{
 		std::cerr << ex.what() << std::endl;
 	}

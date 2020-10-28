@@ -28,19 +28,19 @@ class ShiftReduceConflict
 	:public std::domain_error
 {
 public:
-	explicit ShiftReduceConflict(const std::string_view& msg, std::string ch)
-		:std::domain_error(msg.data())
-		,m_collisionChar(std::move(ch))
+	explicit ShiftReduceConflict(std::pair<size_t, size_t> pos)
+		:std::domain_error("Shift/Reduce conflict - not a SLR(1) grammar")
+		,m_pos(pos)
 	{
 	}
 
-	std::string CollisionChar() const
+	std::pair<size_t, size_t> Position() const
 	{
-		return m_collisionChar;
+		return m_pos;
 	}
 
 private:
-	std::string m_collisionChar;
+	std::pair<size_t, size_t> m_pos;
 };
 
 template <class T>
