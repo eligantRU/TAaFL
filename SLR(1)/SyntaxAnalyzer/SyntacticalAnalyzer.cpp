@@ -80,17 +80,6 @@ void SyntacticalAnalyzer::Run()
 	}
 }
 
-LRData SyntacticalAnalyzer::GetLRDataByCh(std::string currentChar)
-{
-	if (const auto it = std::find_if(m_lrData.begin(), m_lrData.end(), [&](const LRData& data) {
-			return data.ch == currentChar;
-		}); it != m_lrData.end())
-	{
-		return *it;
-	}
-	throw std::invalid_argument("Error. Wrong character: " + currentChar);
-}
-
 Symbol SyntacticalAnalyzer::GetSymbolByChInLRData(const LRData& data, const Lexeme& currLexeme)
 {
 	const auto headerSymbol = PrecariousLexeme(currLexeme);
