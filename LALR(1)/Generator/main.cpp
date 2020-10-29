@@ -10,6 +10,16 @@
 namespace
 {
 
+void PrintGrammar(std::ostream& output, const std::vector<Rule>& rules)
+{
+	for (const auto& rule : rules)
+	{
+		output << rule.left << SPACE << SEPARATOR << SPACE;
+		PrintVector(output, rule.right, SPACE);
+		output << std::endl;
+	}
+}
+
 void GenerateParser(std::istream& inputGrammar, std::ostream& outputGrammar, std::ostream& outputTable)
 {
 	auto grammar = GetGrammar(inputGrammar);
@@ -21,10 +31,10 @@ void GenerateParser(std::istream& inputGrammar, std::ostream& outputGrammar, std
 		}
 		catch (const ShiftReduceConflict& ex)
 		{
-			grammar = LALR2SLR(grammar, ex.RuleNum());
+			grammar = LALR2SLR(grammar, ex.ConflictRuleNum());
 			continue;
 		}
-		PrintGrammar(outputGrammar, grammar); // TODO: useless if true-optimize table
+		PrintGrammar(outputGrammar, grammar); // TODO: for other students only
 		break;
 	} while (true);
 }

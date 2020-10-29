@@ -169,7 +169,7 @@ void TransitionsToTable(const std::vector<Rule>& grammar, const std::vector<std:
 			if constexpr (std::is_same_v<T, size_t>)
 			{
 				const auto columnNum = std::distance(chars.cbegin(), std::find(chars.cbegin(), chars.cend(), k));
-				table[rowNum][columnNum] = Reduce{ arg };
+				table[rowNum][columnNum] = Reduce{ arg, grammar[arg].left, grammar[arg].right.size() };
 			}
 			else if constexpr (std::is_same_v<T, std::set<std::pair<size_t, size_t>>>)
 			{
@@ -228,6 +228,61 @@ std::set<std::set<std::pair<size_t, size_t>>> GetNextToProcess(const Table<std::
 	return nextToProcess;
 }
 
+void ProcessNextShift(const std::vector<Rule>& grammar, const std::pair<size_t, size_t>& pos,
+	std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions)
+{
+	if (((pos.second + 2) == grammar[pos.first].right.size()))
+	{
+		transitions[TERMINAL_END_SEQUENCE] = pos.first;
+		return;
+	}
+
+	const auto follows = GetFollow(grammar, grammar[pos.first].left);
+	for (const auto& follow : follows)
+	{
+		if (std::holds_alternative<std::set<std::pair<size_t, size_t>>>(transitions[follow]))
+		{
+			if (!std::get<std::set<std::pair<size_t, size_t>>>(transitions[follow]).empty()) // TODO: does it can be empty? Should be fixed
+			{
+				throw ShiftReduceConflict(pos.first);
+			}
+		}
+		transitions[follow] = pos.first;
+	}
+}
+
+void ProcessNextReduce(const std::vector<Rule>& grammar, const std::pair<size_t, size_t>& pos,
+	std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions)
+{
+	std::get<0>(transitions[grammar[pos.first].right[pos.second + 1]]).insert(std::make_pair(pos.first, pos.second + 1));
+	const auto first = GetFirstByNonTerminal(grammar, grammar[pos.first].right[pos.second + 1]);
+	for (const auto& [firstCh, firstPos] : first)
+	{
+		if (std::holds_alternative<size_t>(transitions[firstCh]))
+		{
+			throw ShiftReduceConflict(firstPos.first);
+		}
+		std::get<0>(transitions[firstCh]).insert(firstPos);
+	}
+}
+
+void ProcessNext(const std::set<std::pair<size_t, size_t>>& next, const std::vector<Rule>& grammar,
+	std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions)
+{
+	for (const auto& pos : next)
+	{
+		if (((pos.second + 1) == grammar[pos.first].right.size())
+			|| (((pos.second + 2) == grammar[pos.first].right.size()) && IsEndRule(grammar[pos.first].right.back())))
+		{
+			ProcessNextShift(grammar, pos, transitions);
+		}
+		else
+		{
+			ProcessNextReduce(grammar, pos, transitions);
+		}
+	}
+}
+
 }
 
 Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<Rule>& grammar)
@@ -254,44 +309,7 @@ Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<
 	{
 		for (const auto& next : nextToProcess)
 		{
-			for (const auto& pos : next)
-			{
-				if (((pos.second + 1) == grammar[pos.first].right.size())
-					|| (((pos.second + 2) == grammar[pos.first].right.size()) && IsEndRule(grammar[pos.first].right.back())))
-				{
-					if (((pos.second + 2) == grammar[pos.first].right.size()))
-					{
-						transitions[TERMINAL_END_SEQUENCE] = pos.first;
-						continue;
-					}
-
-					const auto follows = GetFollow(grammar, grammar[pos.first].left);
-					for (const auto& follow : follows)
-					{
-						if (std::holds_alternative<std::set<std::pair<size_t, size_t>>>(transitions[follow]))
-						{
-							if (!std::get<std::set<std::pair<size_t, size_t>>>(transitions[follow]).empty())
-							{
-								throw ShiftReduceConflict(pos.first);
-							}
-						}
-						transitions[follow] = pos.first;
-					}
-				}
-				else
-				{
-					std::get<0>(transitions[grammar[pos.first].right[pos.second + 1]]).insert(std::make_pair(pos.first, pos.second + 1));
-					const auto first = GetFirstByNonTerminal(grammar, grammar[pos.first].right[pos.second + 1]);
-					for (const auto& [ch, pos] : first)
-					{
-						if (std::holds_alternative<size_t>(transitions[ch]))
-						{
-							throw ShiftReduceConflict(pos.first);
-						}
-						std::get<0>(transitions[ch]).insert(pos);
-					}
-				}
-			}
+			ProcessNext(next, grammar, transitions);
 
 			mainColumn->emplace_back(next);
 			TransitionsToTable(grammar, chars, mainColumn, transitions, table, rowNum);

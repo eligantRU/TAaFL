@@ -38,7 +38,7 @@ std::string GetRandomString()
 	return NONTERMINAL_GEN_PREFIX + std::to_string(callCounter++);
 }
 
-void PrintInfoVector(std::ostream& output, const std::vector<std::string>& vec, const std::string& separator)
+void PrintVector(std::ostream& output, const std::vector<std::string>& vec, const std::string& separator)
 {
 	if (vec.empty())
 	{
@@ -269,16 +269,6 @@ std::vector<Rule> GetGrammar(std::istream& input)
 		}
 	}
 	return rules;
-}
-
-void PrintGrammar(std::ostream& output, const std::vector<Rule>& rules)
-{
-	for (const auto& rule : rules)
-	{
-		output << rule.left << SPACE << SEPARATOR << SPACE;
-		PrintInfoVector(output, rule.right, SPACE);
-		output << std::endl;
-	}
 }
 
 std::vector<Rule> LALR2SLR(const std::vector<Rule>& baseGrammar, size_t ruleNum)

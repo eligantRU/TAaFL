@@ -84,27 +84,14 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& strm, const Table<T>& table)
 	{
-		constexpr auto filler = ' ';
-		constexpr auto columnOffset = 5;
-
 		const auto lengths = table.CalcColumnLengths();
-		if (table.m_columnLegend) // TODO: copy-paste
+		if (table.m_columnLegend)
 		{
-			size_t i = 0;
-			for (const auto& columnLegend : *(table.m_columnLegend))
-			{
-				strm << std::setfill(filler) << std::setw(lengths[i++] + columnOffset) << columnLegend;
-			}
-			strm << std::endl;
+			table.PrintRow(strm, *(table.m_columnLegend), lengths, [](const std::string& val) { return val; });
 		}
 		for (const auto& row : table.m_rows)
 		{
-			size_t i = 0;
-			for (const auto& cell : row)
-			{
-				strm << std::setfill(filler) << std::setw(lengths[i++] + columnOffset) << table.m_cellPrinter(cell);
-			}
-			strm << std::endl;
+			table.PrintRow(strm, row, lengths, std::bind(table.m_cellPrinter, std::placeholders::_1));
 		}
 		return strm;
 	}
@@ -140,7 +127,21 @@ private:
 		return lengths;
 	}
 
-	std::optional<std::vector<std::string>> m_columnLegend; // TODO: optional processing
+	template<class E, class F>
+	static void PrintRow(std::ostream& strm, const std::vector<E>& row, const std::vector<size_t>& lengths, F&& printStrategy)
+	{
+		constexpr auto filler = ' ';
+		constexpr auto columnOffset = 5;
+		
+		size_t i = 0;
+		for (const auto& el : row)
+		{
+			strm << std::setfill(filler) << std::setw(lengths[i++] + columnOffset) << printStrategy(el);
+		}
+		strm << std::endl;
+	}
+
+	std::optional<std::vector<std::string>> m_columnLegend; // TODO: not so optional now
 	std::vector<Row> m_rows;
 
 	std::function<std::string(T)> m_cellPrinter;

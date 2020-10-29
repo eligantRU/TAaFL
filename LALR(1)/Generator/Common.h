@@ -8,7 +8,7 @@ namespace Settings
 {
 
 constexpr auto USE_LEXER = false;
-constexpr auto USE_OPTIMIZED_TABLE = false;
+constexpr auto USE_OPTIMIZED_TABLE = true;
 
 }
 
@@ -34,7 +34,7 @@ public:
 	{
 	}
 
-	size_t RuleNum() const
+	size_t ConflictRuleNum() const
 	{
 		return m_ruleNum;
 	}
@@ -71,7 +71,7 @@ struct Shift
 	{
 		if constexpr (Settings::USE_OPTIMIZED_TABLE)
 		{
-			return "S" + std::to_string(1 + std::distance(mainColumn->cbegin(), std::find(mainColumn->cbegin(), mainColumn->cend(), value)));
+			return std::to_string(1 + std::distance(mainColumn->cbegin(), std::find(mainColumn->cbegin(), mainColumn->cend(), value)));
 		}
 		else
 		{
@@ -91,12 +91,14 @@ struct Shift
 struct Reduce
 {
 	size_t value;
+	std::string ch;
+	size_t len;
 
 	operator std::string()
 	{
-		if constexpr (Settings::USE_OPTIMIZED_TABLE) // TODO: optimize it
+		if constexpr (Settings::USE_OPTIMIZED_TABLE)
 		{
-			return "R" + ToString(value);
+			return ch + "|" + ToString(len);
 		}
 		else
 		{
