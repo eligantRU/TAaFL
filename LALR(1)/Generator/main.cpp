@@ -55,8 +55,7 @@ int main(int argc, char* argv[])
 		std::ofstream outputTable(argv[3]);
 		if (!inputGrammar.is_open())
 		{
-			std::cerr << "This file does not exist" << std::endl;
-			return 1;
+			throw std::runtime_error("This file does not exist");
 		}
 
 		GenerateParser(inputGrammar, outputGrammar, outputTable);

@@ -288,7 +288,6 @@ void ProcessNext(const std::set<std::pair<size_t, size_t>>& next, const std::vec
 Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<Rule>& grammar)
 {
 	const auto chars = GetUniqueCharacters(grammar);
-	
 	Table<std::optional<std::variant<Shift, Reduce>>> table(chars, [](const auto& cell) {
 		return cell
 			? std::visit([](auto&& arg) {
@@ -296,9 +295,8 @@ Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<
 				}, *cell)
 			: "-";
 	});
-
-	auto mainColumn = std::make_shared<std::vector<std::set<std::pair<size_t, size_t>>>>(); // TODO:
 	size_t rowNum = 0;
+	auto mainColumn = std::make_shared<std::vector<std::set<std::pair<size_t, size_t>>>>(); // TODO:
 
 	auto transitions = ColdStart(grammar);
 	TransitionsToTable(grammar, chars, mainColumn, transitions, table, rowNum);
