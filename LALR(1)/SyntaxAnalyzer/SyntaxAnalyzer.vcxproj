@@ -145,6 +145,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Common.hpp" />
     <ClInclude Include="TableUtils.hpp" />
     <ClInclude Include="ValidatorUtils.hpp" />
   </ItemGroup>

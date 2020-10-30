@@ -5,7 +5,7 @@
 #include <vector>
 #include <set>
 
-namespace Settings
+namespace GeneratorSettings
 {
 
 constexpr auto USE_LEXER = false;

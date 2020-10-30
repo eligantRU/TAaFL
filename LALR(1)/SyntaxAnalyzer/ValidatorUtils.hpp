@@ -1,9 +1,10 @@
 #pragma once
 
-#include <stack>
+//#include <stack>
 
 #include "../../Lexer/Lexer.hpp" // TODO: ugly import
 
+#include "Common.hpp"
 #include "TableUtils.hpp"
 
 namespace
@@ -11,12 +12,11 @@ namespace
 
 std::string PrecariousLexeme(Lexeme lexeme)
 {
-	if (true) // TODO:
+	if constexpr (!AnalyzerSettings::USE_LEXER)
 	{
 		return (lexeme.type != LexemeType::EndOfFile) ? lexeme.lexeme : TERMINAL_END_SEQUENCE;
 	}
-
-	if (const auto type = lexeme.type; type != LexemeType::Error)
+	else if (const auto type = lexeme.type; type != LexemeType::Error)
 	{
 		return (type != LexemeType::EndOfFile) ? LexemeTypeToString(type) : TERMINAL_END_SEQUENCE;
 	}

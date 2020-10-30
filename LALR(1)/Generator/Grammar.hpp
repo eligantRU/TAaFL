@@ -245,7 +245,7 @@ std::vector<Rule> GetGrammar(std::istream& input)
 	RemoveEmptyRules(rules, terminals);
 	AddEndTerminalToAxiom(rules);
 
-	if constexpr (Settings::USE_LEXER)
+	if constexpr (GeneratorSettings::USE_LEXER)
 	{
 		for (auto& [left, right] : rules)
 		{
