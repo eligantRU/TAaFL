@@ -8,7 +8,7 @@
 namespace GeneratorSettings
 {
 
-constexpr auto USE_LEXER = false;
+constexpr auto USE_LEXER = true;
 constexpr auto USE_OPTIMIZED_TABLE = true;
 
 }

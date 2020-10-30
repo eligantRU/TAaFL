@@ -31,7 +31,7 @@ struct Reduce
 
 bool IsNumber(const std::string_view& sv)
 {
-	const std::string str = sv.data(); // TODO:
+	const std::string str = sv.data();
 	return std::all_of(str.cbegin(), str.cend(), ::isdigit);
 }
 

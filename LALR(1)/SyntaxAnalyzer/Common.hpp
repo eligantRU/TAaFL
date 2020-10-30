@@ -3,6 +3,6 @@
 namespace AnalyzerSettings
 {
 
-constexpr auto USE_LEXER = false;
+constexpr auto USE_LEXER = true;
 
 }
