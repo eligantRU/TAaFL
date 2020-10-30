@@ -1,13 +1,62 @@
+#pragma once
+
 #include <set>
 #include <map>
 
-#include "Common.h"
 #include "Table.hpp"
+#include "Common.hpp"
 
 namespace
 {
 
 template<class> inline constexpr bool always_false_v = false;
+
+// TODO: expicit constructor with contract check & immutable model
+struct Shift
+{
+	std::string ch;
+	std::shared_ptr<std::vector<std::set<std::pair<size_t, size_t>>>> mainColumn;
+	std::set<std::pair<size_t, size_t>> value;
+
+	operator std::string()
+	{
+		if constexpr (Settings::USE_OPTIMIZED_TABLE)
+		{
+			return std::to_string(1 + std::distance(mainColumn->cbegin(), std::find(mainColumn->cbegin(), mainColumn->cend(), value)));
+		}
+		else
+		{
+			std::string res;
+			for (size_t i = 0; i < value.size(); ++i)
+			{
+				auto it = value.cbegin();
+				std::advance(it, i);
+				const auto& [row, col] = *it;
+				res += (i ? "|" : "") + ToString(row) + "," + ToString(col);
+			}
+			return ch + "(" + res + ")";
+		}
+	}
+};
+
+struct Reduce
+{
+	size_t value;
+	std::string ch;
+	size_t len;
+
+	operator std::string()
+	{
+		if constexpr (Settings::USE_OPTIMIZED_TABLE)
+		{
+			return ch + "|" + ToString(len);
+		}
+		else
+		{
+			return "R" + ToString(value);
+		}
+	}
+};
 
 template <class T>
 T Uniqify(const T & c)

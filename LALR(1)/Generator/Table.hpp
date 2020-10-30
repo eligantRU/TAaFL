@@ -2,16 +2,41 @@
 
 #include <type_traits>
 #include <functional>
+#include <algorithm>
+#include <optional>
+#include <variant>
 #include <iomanip>
 #include <string>
 
-#include "Common.h"
+#include "Common.hpp"
 
-template <class T>
+template <class T = void>
 class Table
 {
+	static const auto COLUMN_OFFSET = 5;
+
 public:
+	static const auto EMPTY_CELL = '-';
+	static const auto FILLER = ' ';
+
 	using Row = std::vector<T>;
+
+	Table(std::istream& strm, const std::vector<std::string>& legend, std::function<T(std::string)>&& converter) // TODO: cellPrinter
+		:m_columnLegend(legend)
+	{
+		std::string line;
+		while (std::getline(strm, line))
+		{
+			Row tableRow;
+			const auto row = Tokenize(line, FILLER);
+			for (const auto& cell : row)
+			{
+				const auto el = converter(cell);
+				tableRow.push_back(el);
+			}
+			AddRow(tableRow);
+		}
+	}
 
 	Table(std::vector<std::string> legend)
 		:Table(legend, [](const auto& cell) {
@@ -37,7 +62,7 @@ public:
 		m_rows.emplace_back(row);
 	}
 
-	Row& operator[](size_t i) const
+	const Row& operator[](size_t i) const
 	{
 		return m_rows[i];
 	}
@@ -129,14 +154,11 @@ private:
 
 	template<class E, class F>
 	static void PrintRow(std::ostream& strm, const std::vector<E>& row, const std::vector<size_t>& lengths, F&& printStrategy)
-	{
-		constexpr auto filler = ' ';
-		constexpr auto columnOffset = 5;
-		
+	{		
 		size_t i = 0;
 		for (const auto& el : row)
 		{
-			strm << std::setfill(filler) << std::setw(lengths[i++] + columnOffset) << printStrategy(el);
+			strm << std::setfill(FILLER) << std::setw(lengths[i++] + COLUMN_OFFSET) << printStrategy(el);
 		}
 		strm << std::endl;
 	}

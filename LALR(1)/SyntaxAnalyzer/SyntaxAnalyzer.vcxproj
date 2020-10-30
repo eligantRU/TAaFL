@@ -20,8 +20,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{170D7DB9-0751-43FA-9C25-60E15A9E06DD}</ProjectGuid>
-    <RootNamespace>Generator</RootNamespace>
+    <ProjectGuid>{5B9ABF29-9095-4C70-AC1A-9FC6190C4BB0}</ProjectGuid>
+    <RootNamespace>SyntaxAnalyzer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -145,10 +145,8 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Common.hpp" />
-    <ClInclude Include="Generator.hpp" />
-    <ClInclude Include="Grammar.hpp" />
-    <ClInclude Include="Table.hpp" />
+    <ClInclude Include="TableUtils.hpp" />
+    <ClInclude Include="ValidatorUtils.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

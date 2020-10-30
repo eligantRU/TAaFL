@@ -20,16 +20,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Grammar.hpp">
+    <ClInclude Include="TableUtils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Table.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Generator.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Common.hpp">
+    <ClInclude Include="ValidatorUtils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

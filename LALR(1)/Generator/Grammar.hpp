@@ -2,20 +2,8 @@
 
 #include <sstream>
 
-#include "Common.h"
+#include "Common.hpp"
 #include "../../Lexer/Lexer.hpp"
-
-std::vector<std::string> Tokenize(const std::string& str, char separator = ' ')
-{
-	std::vector<std::string> result;
-	std::stringstream stream(str);
-	std::string tmp;
-	while (std::getline(stream, tmp, separator))
-	{
-		result.push_back(tmp);
-	}
-	return result;
-}
 
 bool IsNonTerminal(const std::string_view& sv)
 {

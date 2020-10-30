@@ -3,7 +3,7 @@
 #include <fstream>
 #include <ctime>
 
-#include "Common.h"
+#include "Common.hpp"
 #include "Grammar.hpp"
 #include "Generator.hpp"
 
@@ -45,14 +45,14 @@ int main(int argc, char* argv[])
 {	
 	try
 	{
-		if (argc != 4)
+		if (argc != 3)
 		{
-			throw std::invalid_argument("Invalid arguments, should be <exe> <input_grammar> <output_grammar> <table>");
+			throw std::invalid_argument("Invalid arguments, should be <exe> <input_grammar> <table>");
 		}
 
 		std::ifstream inputGrammar(argv[1]);
-		std::ofstream outputGrammar(argv[2]);
-		std::ofstream outputTable(argv[3]);
+		std::ofstream outputTable(argv[2]);
+		std::ofstream outputGrammar("grammar.txt");
 		if (!inputGrammar.is_open())
 		{
 			throw std::runtime_error("This file does not exist");

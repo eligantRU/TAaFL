@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sstream>
 #include <string>
 #include <vector>
 #include <set>
@@ -50,6 +51,14 @@ constexpr std::string ToString(T arg)
 	{
 		return arg;
 	}
+	else if constexpr (std::is_same<T, char>::value)
+	{
+		return std::string(1, arg);
+	}
+	else if constexpr (std::is_same<T, std::string_view>::value)
+	{
+		return std::string(arg.data());
+	}
 	else if constexpr (std::is_arithmetic<T>::value)
 	{
 		return std::to_string(arg);
@@ -60,49 +69,17 @@ constexpr std::string ToString(T arg)
 	}
 };
 
-// TODO: expicit constructor with contract check & immutable model
-struct Shift
+std::vector<std::string> Tokenize(const std::string& str, char separator = ' ')
 {
-	std::string ch;
-	std::shared_ptr<std::vector<std::set<std::pair<size_t, size_t>>>> mainColumn;
-	std::set<std::pair<size_t, size_t>> value;
-
-	operator std::string()
+	std::vector<std::string> result;
+	std::stringstream stream(str);
+	std::string tmp;
+	while (std::getline(stream, tmp, separator))
 	{
-		if constexpr (Settings::USE_OPTIMIZED_TABLE)
+		if (!tmp.empty())
 		{
-			return std::to_string(1 + std::distance(mainColumn->cbegin(), std::find(mainColumn->cbegin(), mainColumn->cend(), value)));
-		}
-		else
-		{
-			std::string res;
-			for (size_t i = 0; i < value.size(); ++i)
-			{
-				auto it = value.cbegin();
-				std::advance(it, i);
-				const auto& [row, col] = *it;
-				res += (i ? "|" : "") + ToString(row) + "," + ToString(col);
-			}
-			return ch + "(" + res + ")";
+			result.push_back(tmp);
 		}
 	}
-};
-
-struct Reduce
-{
-	size_t value;
-	std::string ch;
-	size_t len;
-
-	operator std::string()
-	{
-		if constexpr (Settings::USE_OPTIMIZED_TABLE)
-		{
-			return ch + "|" + ToString(len);
-		}
-		else
-		{
-			return "R" + ToString(value);
-		}
-	}
-};
+	return result;
+}
