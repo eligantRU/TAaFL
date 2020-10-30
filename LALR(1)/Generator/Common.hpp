@@ -25,6 +25,16 @@ struct Rule
 	std::vector<std::string> right;
 };
 
+bool operator==(const Rule& lhs, const Rule& rhs)
+{
+	return (lhs.left == rhs.left) && (lhs.right == rhs.right);
+}
+
+bool operator!=(const Rule& lhs, const Rule& rhs)
+{
+	return !(lhs == rhs);
+}
+
 class ShiftReduceConflict
 	:public std::domain_error
 {

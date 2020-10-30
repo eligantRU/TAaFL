@@ -65,14 +65,12 @@ T Uniqify(const T & c)
 	return { bla.cbegin(), bla.cend() };
 }
 
-std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirst(const std::vector<Rule>& grammar, Rule processingRule)
+std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirst(const std::vector<Rule>& grammar, const Rule& processingRule)
 {
 	std::vector<std::pair<std::string, std::pair<size_t, size_t>>> result;
 	
 	const auto firstProcessingRight = processingRule.right.front();
-	const auto rulePos = std::distance(grammar.cbegin(), std::find_if(grammar.cbegin(), grammar.cend(), [&processingRule](const auto& rule) {
-		return (rule.left == processingRule.left) && (rule.right == processingRule.right);
-	}));
+	const auto rulePos = std::distance(grammar.cbegin(), std::find(grammar.cbegin(), grammar.cend(), processingRule));
 
 	if (IsNonTerminal(firstProcessingRight))
 	{
@@ -80,7 +78,7 @@ std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirst(const st
 		{
 			if (rule.left == firstProcessingRight)
 			{
-				if ((rule.left != processingRule.left) && (rule.right != processingRule.right))
+				if (rule != processingRule)
 				{
 					const auto bla = GetFirst(grammar, rule);
 					std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
@@ -193,12 +191,12 @@ std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>
 			std::get<0>(transitions[right.front()]).insert(std::make_pair(i, 0));
 		}
 
-		if (IsNonTerminal(right.front()))
+		if (const auto firstRight = right.front(); IsNonTerminal(firstRight))
 		{
-			const auto first = GetFirstByNonTerminal(grammar, right.front());
+			const auto first = GetFirstByNonTerminal(grammar, firstRight);
 			for (const auto& [ch, pos] : first)
 			{
-				std::get<0>(transitions[right.front()]).insert(pos);
+				std::get<0>(transitions[firstRight]).insert(pos);
 			}
 		}
 	}

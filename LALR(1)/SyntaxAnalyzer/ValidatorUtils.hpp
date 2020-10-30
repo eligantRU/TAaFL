@@ -30,16 +30,10 @@ std::string PrecariousLexeme(Lexeme lexeme)
 
 std::vector<Lexeme> GetSentence(std::istream& inputSentence)
 {
-	std::vector<Lexeme> lexemes;
-
 	Lexer lexer(inputSentence);
-	bool needIterate = false;
-	do
-	{
-		const auto lexeme = lexer.GetLexeme();
-		lexemes.push_back(lexeme);
-		needIterate = (lexeme.type != LexemeType::EndOfFile);
-	} while (needIterate);
+
+	std::vector<Lexeme> lexemes;
+	do {} while (lexemes.emplace_back(lexer.GetLexeme()).type != LexemeType::EndOfFile);
 	return lexemes;
 }
 
