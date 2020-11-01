@@ -10,6 +10,7 @@ namespace GeneratorSettings
 
 constexpr auto USE_LEXER = true;
 constexpr auto USE_OPTIMIZED_TABLE = true;
+constexpr auto USE_PRETTY_TABLE = true;
 
 }
 
@@ -24,6 +25,8 @@ struct Rule
 	std::string left;
 	std::vector<std::string> right;
 };
+
+using Grammar = std::set<Rule>; // TODO:
 
 bool operator==(const Rule& lhs, const Rule& rhs)
 {

@@ -348,7 +348,7 @@ Table<std::optional<std::variant<Shift, Reduce>>> GetTableSLR(const std::vector<
 	auto transitions = ColdStart(grammar);
 	TransitionsToTable(grammar, chars, mainColumn, transitions, table, rowNum);
 	transitions.clear();
-	
+
 	auto nextToProcess = GetNextToProcess(table, mainColumn);
 	do
 	{

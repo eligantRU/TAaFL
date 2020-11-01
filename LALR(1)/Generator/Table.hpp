@@ -158,7 +158,15 @@ private:
 		size_t i = 0;
 		for (const auto& el : row)
 		{
-			strm << std::setfill(FILLER) << std::setw(lengths[i++] + COLUMN_OFFSET) << printStrategy(el);
+			if constexpr (GeneratorSettings::USE_PRETTY_TABLE)
+			{
+				strm << std::setfill(FILLER) << std::setw(lengths[i] + (i ? COLUMN_OFFSET : 0)) << printStrategy(el);
+			}
+			else
+			{
+				strm << (i ? std::string(1, FILLER) : "") << printStrategy(el);
+			}
+			++i;
 		}
 		strm << std::endl;
 	}
