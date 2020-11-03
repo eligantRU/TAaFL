@@ -58,15 +58,13 @@ struct Reduce
 	}
 };
 
-template <class T>
-T Uniqify(const T & c)
+std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirst(const std::vector<Rule>& grammar, const Rule& processingRule, const std::set<Rule>& processedRules = {})
 {
-	std::set bla(c.cbegin(), c.cend());
-	return { bla.cbegin(), bla.cend() };
-}
+	if (processedRules.count(processingRule))
+	{
+		return {};
+	}
 
-std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirst(const std::vector<Rule>& grammar, const Rule& processingRule)
-{
 	std::vector<std::pair<std::string, std::pair<size_t, size_t>>> result;
 	
 	const auto firstProcessingRight = processingRule.right.front();
@@ -80,8 +78,11 @@ std::vector<std::pair<std::string, std::pair<size_t, size_t>>> GetFirst(const st
 			{
 				if (rule != processingRule)
 				{
-					const auto bla = GetFirst(grammar, rule);
-					std::copy(bla.cbegin(), bla.cend(), std::back_inserter(result));
+					auto tmpProcessedRules(processedRules);
+					tmpProcessedRules.insert(processingRule);
+
+					const auto first = GetFirst(grammar, rule, tmpProcessedRules);
+					std::copy(first.cbegin(), first.cend(), std::back_inserter(result));
 				}
 				result.emplace_back(rule.left, std::make_pair(rulePos, 0));
 			}
@@ -301,6 +302,10 @@ void ProcessNextShift(const std::vector<Rule>& grammar, const std::pair<size_t, 
 void ProcessNextReduce(const std::vector<Rule>& grammar, const std::pair<size_t, size_t>& pos,
 	std::map<std::string, std::variant<std::set<std::pair<size_t, size_t>>, size_t>>& transitions)
 {
+	if (std::holds_alternative<size_t>(transitions[grammar[pos.first].right[pos.second + 1]]))
+	{
+		throw ShiftReduceConflict(pos.first);
+	}
 	std::get<0>(transitions[grammar[pos.first].right[pos.second + 1]]).insert(std::make_pair(pos.first, pos.second + 1));
 	const auto first = GetFirstByNonTerminal(grammar, grammar[pos.first].right[pos.second + 1]);
 	for (const auto& [firstCh, firstPos] : first)

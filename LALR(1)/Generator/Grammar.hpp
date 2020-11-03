@@ -5,6 +5,17 @@
 #include "Common.hpp"
 #include "../../Lexer/Lexer.hpp"
 
+namespace
+{
+
+std::string GetRandomString()
+{
+	static size_t callCounter = 0;
+	return NONTERMINAL_GEN_PREFIX + ToString(callCounter++);
+}
+
+}
+
 bool IsNonTerminal(const std::string_view& sv)
 {
 	return (sv.size() > 2) && sv.front() == '<' && sv.back() == '>';
@@ -20,10 +31,9 @@ bool IsEndRule(const std::string_view& sv)
 	return sv == TERMINAL_END_SEQUENCE;
 }
 
-std::string GetRandomString()
+std::string GenerateNonTerminal()
 {
-	static size_t callCounter = 0;
-	return NONTERMINAL_GEN_PREFIX + std::to_string(callCounter++);
+	return "<" + GetRandomString() + ">";
 }
 
 void PrintVector(std::ostream& output, const std::vector<std::string>& vec, const std::string& separator)
@@ -128,7 +138,7 @@ void MakeReplenished(std::vector<Rule>& rules, std::unordered_set<std::string>& 
 		return;
 	}
 
-	const auto randomNonterminal = "<" + GetRandomString() + ">";
+	const auto randomNonterminal = GenerateNonTerminal();
 	nonTerminals.insert(randomNonterminal);
 	rules.insert(rules.begin(), { randomNonterminal, std::vector<std::string>{ rules.front().left } });
 }
@@ -257,40 +267,4 @@ std::vector<Rule> GetGrammar(std::istream& input)
 		}
 	}
 	return rules;
-}
-
-std::vector<Rule> LALR2SLR(const std::vector<Rule>& baseGrammar, size_t ruleNum)
-{
-	std::vector<Rule> grammar(baseGrammar);
-
-	const auto conflictNonTerminal = baseGrammar[ruleNum].left;
-
-	std::vector<std::string> nonTerminals;
-	for (auto& [left, right]: grammar)
-	{
-		for (auto& ch : right)
-		{
-			ch = (ch == conflictNonTerminal) ? nonTerminals.emplace_back("<" + GetRandomString() + ">") : ch;
-		}
-	}
-
-	const auto grammarCopy(grammar);
-	for (const auto& [left, right] : grammarCopy)
-	{
-		if (left != conflictNonTerminal)
-		{
-			continue;
-		}
-
-		for (const auto& nonTerminal : nonTerminals)
-		{
-			grammar.push_back({ nonTerminal, right });
-		}
-	}
-	
-	decltype(grammar) result;
-	std::copy_if(grammar.cbegin(), grammar.cend(), std::back_inserter(result), [&conflictNonTerminal](const auto& rule) {
-		return rule.left != conflictNonTerminal;
-	});
-	return result;
 }

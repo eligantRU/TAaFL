@@ -7,42 +7,8 @@
 #include "Grammar.hpp"
 #include "Generator.hpp"
 
-namespace
-{
-
-void PrintGrammar(std::ostream& output, const std::vector<Rule>& rules)
-{
-	for (const auto& rule : rules)
-	{
-		output << rule.left << SPACE << SEPARATOR << SPACE;
-		PrintVector(output, rule.right, SPACE);
-		output << std::endl;
-	}
-}
-
-void GenerateParser(std::istream& inputGrammar, std::ostream& outputGrammar, std::ostream& outputTable)
-{
-	auto grammar = GetGrammar(inputGrammar);
-	do
-	{
-		try
-		{
-			outputTable << GetTableSLR(grammar);
-		}
-		catch (const ShiftReduceConflict& ex)
-		{
-			grammar = LALR2SLR(grammar, ex.ConflictRuleNum());
-			continue;
-		}
-		PrintGrammar(outputGrammar, grammar); // TODO: for other students only
-		break;
-	} while (true);
-}
-
-}
-
 int main(int argc, char* argv[])
-{	
+{
 	try
 	{
 		if (argc != 3)
@@ -52,13 +18,12 @@ int main(int argc, char* argv[])
 
 		std::ifstream inputGrammar(argv[1]);
 		std::ofstream outputTable(argv[2]);
-		std::ofstream outputGrammar("grammar.txt");
 		if (!inputGrammar.is_open())
 		{
 			throw std::runtime_error("This file does not exist");
 		}
 
-		GenerateParser(inputGrammar, outputGrammar, outputTable);
+		outputTable << GetTableSLR(GetGrammar(inputGrammar));
 	}
 	catch (const std::exception& ex)
 	{

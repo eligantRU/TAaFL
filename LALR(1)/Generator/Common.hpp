@@ -26,16 +26,30 @@ struct Rule
 	std::vector<std::string> right;
 };
 
-using Grammar = std::set<Rule>; // TODO:
+bool operator<(const Rule& lhs, const Rule& rhs) noexcept
+{
+	if (lhs.left == rhs.left)
+	{
+		return lhs.right < rhs.right;
+	}
+	return lhs.left < rhs.left;
+}
 
-bool operator==(const Rule& lhs, const Rule& rhs)
+bool operator==(const Rule& lhs, const Rule& rhs) noexcept
 {
 	return (lhs.left == rhs.left) && (lhs.right == rhs.right);
 }
 
-bool operator!=(const Rule& lhs, const Rule& rhs)
+bool operator!=(const Rule& lhs, const Rule& rhs) noexcept
 {
 	return !(lhs == rhs);
+}
+
+template <class T>
+T Uniqify(const T & c)
+{
+	std::set bla(c.cbegin(), c.cend());
+	return { bla.cbegin(), bla.cend() };
 }
 
 class ShiftReduceConflict
