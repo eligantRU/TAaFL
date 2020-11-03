@@ -15,30 +15,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Helper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="LRReader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SyntacticalAnalyzer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Helper.h">
+    <ClInclude Include="TableUtils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LRData.h">
+    <ClInclude Include="ValidatorUtils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LRReader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SyntacticalAnalyzer.h">
+    <ClInclude Include="Common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

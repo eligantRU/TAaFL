@@ -1,48 +1,36 @@
-#include "GeneratorSLR.h"
-#include "GuideSets.h"
-#include <ctime>
 #include <iostream>
+#include <variant>
+#include <fstream>
+#include <ctime>
 
-namespace
-{
-
-void Bla(std::ostream& fileOutput, const std::vector<OutputDataGuideSets>& outputDatas)
-{
-	for (const auto& outputData : outputDatas)
-	{
-		fileOutput << outputData.nonterminal << SPACE << DELIMITER << SPACE;
-		PrintInfoVector(fileOutput, outputData.terminals, SPACE);
-		fileOutput << std::endl;
-	}
-}
-
-}
+#include "Common.hpp"
+#include "Grammar.hpp"
+#include "Generator.hpp"
 
 int main(int argc, char* argv[])
 {
-	if (argc != 3)
+	try
 	{
-		std::cerr << "The number of arguments does not match the task condition\n"
-					 "Input should look: GeneratorLR1.exe <input file> <output file>\n";
-		return 1;
+		if (argc != 3)
+		{
+			throw std::invalid_argument("Invalid arguments, should be <exe> <input_grammar> <table>");
+		}
+
+		std::ifstream inputGrammar(argv[1]);
+		std::ofstream outputTable(argv[2]);
+		if (!inputGrammar.is_open())
+		{
+			throw std::runtime_error("This file does not exist");
+		}
+
+		outputTable << GetTableSLR(GetGrammar(inputGrammar));
 	}
-
-	std::ifstream fileInput(argv[1]);
-	std::ofstream fileOutput(argv[2]);
-
-	if (!fileInput.is_open())
+	catch (const std::exception& ex)
 	{
-		std::cerr << "This file does not exist" << std::endl;
-		return 1;
+		std::cerr << ex.what() << std::endl;
 	}
-
-	std::srand(unsigned(std::time(nullptr)));
-
-	const auto bla = GetFormingGuideSets(fileInput);
-
-	std::ofstream grammarStrm("grammar.txt");
-	Bla(grammarStrm, bla);
-
-	GeneratorSLR generator(bla);
-	generator.Print(fileOutput);
+	catch (...)
+	{
+		std::cerr << "Uncaught exception" << std::endl;
+	}
 }

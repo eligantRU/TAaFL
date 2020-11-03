@@ -1,42 +1,45 @@
-﻿#include "LRReader.h"
-#include "SyntacticalAnalyzer.h"
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <vector>
+#include <regex>
+#include <stack>
+
+#include "../Generator/Table.hpp" // TODO: ugly import
+#include "../../Lexer/Lexer.hpp" // TODO: ugly import
+
+#include "TableUtils.hpp"
+#include "ValidatorUtils.hpp"
 
 int main(int argc, char* argv[])
 {
-	if (argc != 4)
-	{
-		std::cout << "The number of arguments does not match the task condition\n"
-					 "Input should look: SyntacticalAnalyzer.exe <grammar> <table> <sentence>\n";
-		return 1;
-	}
-
 	try
 	{
-		std::ifstream fileGuideSetsInput(argv[1]);
-		std::ifstream fileTableInput(argv[2]);
-		std::ifstream fileSentenceInput(argv[3]);
-
-		if (!fileTableInput.is_open() || !fileSentenceInput.is_open())
+		if (argc != 3)
 		{
-			std::cerr << "This file does not exist" << std::endl;
-			return 1;
+			throw std::invalid_argument("Invalid arguments, should be <exe> <table> <sentence>");
 		}
 
-		LRReader lrReader;
-		lrReader.ReadGuideSets(fileGuideSetsInput);
-		lrReader.ReadSentence(fileSentenceInput);
-		lrReader.ReadTable(fileTableInput);
+		std::ifstream inputTable(argv[1]);
+		std::ifstream inputSentence(argv[2]);
 
-		auto guideSets = lrReader.GetGuideSets();
-		auto headerSymbols = lrReader.GetHeaderSymbols();
-		auto lrData = lrReader.GetLRData();
-		auto sentence = lrReader.GetSentence();
+		if (!inputTable.is_open() || !inputSentence.is_open())
+		{
+			throw std::runtime_error("This file does not exist");
+		}
+		
+		const auto [headerSymbols, table] = GetTable(inputTable);
+		const auto sentence = GetSentence(inputSentence);
 
-		SyntacticalAnalyzer analyzer(guideSets, headerSymbols, lrData, sentence);
-		analyzer.Run();
+		ValidateSentence(headerSymbols, table, sentence);
+		std::cout << "Well done!" << std::endl;
 	}
-	catch (const std::exception& e)
+	catch (const std::exception& ex)
 	{
-		std::cerr << e.what() << std::endl;
+		std::cerr << ex.what() << std::endl;
+	}
+	catch (...)
+	{
+		std::cerr << "Uncaught exception" << std::endl;
 	}
 }
