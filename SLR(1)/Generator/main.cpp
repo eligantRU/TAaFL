@@ -3,9 +3,32 @@
 #include <fstream>
 #include <ctime>
 
-#include "Common.hpp"
-#include "Grammar.hpp"
+#include "../../Lexer/LexerLib/Lexer.hpp"
+#include "../CommonLib/Settings.hpp"
+#include "Grammar.h"
 #include "Generator.hpp"
+
+namespace
+{
+
+Grammar LexemizeGrammar(const Grammar& grammar)
+{
+	auto grammarCopy(grammar);
+	if constexpr (Settings::USE_LEXER)
+	{
+		for (auto& [left, right] : grammarCopy)
+		{
+			std::transform(right.cbegin(), right.cend(), right.begin(), [](const auto& ch) {
+				return IsNonTerminal(ch)
+					? ch
+					: (IsEndRule(ch) ? ch : LexemeTypeToString(ClassifyLexeme(ch)));
+			});
+		}
+	}
+	return grammarCopy;
+}
+
+}
 
 int main(int argc, char* argv[])
 {
@@ -23,7 +46,7 @@ int main(int argc, char* argv[])
 			throw std::runtime_error("This file does not exist");
 		}
 
-		outputTable << GetTableSLR(GetGrammar(inputGrammar));
+		outputTable << GetTableSLR(LexemizeGrammar(GetGrammar(inputGrammar)));
 	}
 	catch (const std::exception& ex)
 	{

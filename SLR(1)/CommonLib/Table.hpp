@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <string>
 
+#include "Settings.hpp"
 #include "Common.hpp"
 
 template <class T = void>
@@ -158,7 +159,7 @@ private:
 		size_t i = 0;
 		for (const auto& el : row)
 		{
-			if constexpr (GeneratorSettings::USE_PRETTY_TABLE)
+			if constexpr (Settings::USE_PRETTY_TABLE)
 			{
 				strm << std::setfill(FILLER) << std::setw(lengths[i] + (i ? COLUMN_OFFSET : 0)) << printStrategy(el);
 			}

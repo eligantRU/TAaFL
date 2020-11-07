@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "Lexer.hpp"
+#include "LexerLib/Lexer.hpp"
 
 int main()
 {

@@ -3,8 +3,12 @@
 #include <set>
 #include <map>
 
-#include "Table.hpp"
-#include "Common.hpp"
+#include "../CommonLib/Settings.hpp"
+#include "../CommonLib/Common.hpp"
+#include "../CommonLib/Table.hpp"
+
+#include "Grammar.h"
+#include "ShiftReduceConflict.h"
 
 namespace
 {
@@ -20,7 +24,7 @@ struct Shift
 
 	operator std::string()
 	{
-		if constexpr (GeneratorSettings::USE_OPTIMIZED_TABLE)
+		if constexpr (Settings::USE_OPTIMIZED_TABLE)
 		{
 			return std::to_string(1 + std::distance(mainColumn->cbegin(), std::find(mainColumn->cbegin(), mainColumn->cend(), value)));
 		}
@@ -47,7 +51,7 @@ struct Reduce
 
 	operator std::string()
 	{
-		if constexpr (GeneratorSettings::USE_OPTIMIZED_TABLE)
+		if constexpr (Settings::USE_OPTIMIZED_TABLE)
 		{
 			return ch + "|" + ToString(len);
 		}

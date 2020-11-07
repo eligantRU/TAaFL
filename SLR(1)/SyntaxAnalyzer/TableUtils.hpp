@@ -4,7 +4,8 @@
 #include <variant>
 #include <regex>
 
-#include "../Generator/Table.hpp"
+#include "../CommonLib/Common.hpp"
+#include "../CommonLib/Table.hpp"
 
 constexpr auto REDUCE_REGEX = "<(\\w+)>\\|(\\d+)";
 

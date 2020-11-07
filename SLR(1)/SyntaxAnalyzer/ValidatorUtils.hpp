@@ -1,10 +1,8 @@
 #pragma once
 
-//#include <stack>
+#include "../../Lexer/LexerLib/Lexer.hpp"
+#include "../CommonLib/Settings.hpp"
 
-#include "../../Lexer/Lexer.hpp" // TODO: ugly import
-
-#include "Common.hpp"
 #include "TableUtils.hpp"
 
 namespace
@@ -12,7 +10,7 @@ namespace
 
 std::string PrecariousLexeme(Lexeme lexeme)
 {
-	if constexpr (!AnalyzerSettings::USE_LEXER)
+	if constexpr (!Settings::USE_LEXER)
 	{
 		return (lexeme.type != LexemeType::EndOfFile) ? lexeme.lexeme : TERMINAL_END_SEQUENCE;
 	}

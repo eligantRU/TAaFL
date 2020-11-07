@@ -5,8 +5,8 @@
 #include <regex>
 #include <stack>
 
-#include "../Generator/Table.hpp" // TODO: ugly import
-#include "../../Lexer/Lexer.hpp" // TODO: ugly import
+#include "../../Lexer/LexerLib/Lexer.hpp"
+#include "../CommonLib/Table.hpp"
 
 #include "TableUtils.hpp"
 #include "ValidatorUtils.hpp"
