@@ -1,7 +1,9 @@
-#include "pch.h"
+#include <catch2/catch.hpp>
 
-#include "../CommonLib/Common.cpp"
-#include "../Generator/Grammar.cpp"
+#include "../CommonLib/Common.hpp"
+
+#include "../Generator/Grammar.h"
+#include "../Generator/GrammarImpl.h"
 
 TEST_CASE("Non-terminal detection", "[IsNonTerminal]")
 {
@@ -43,7 +45,7 @@ SCENARIO("Get rules from istream", "[GetRules]" )
 		std::stringstream strm(
 			"\n"
 		);
-		REQUIRE_THROWS_AS(GetRules(strm), std::logic_error);
+		REQUIRE_THROWS_AS(Impl::GetRules(strm), std::logic_error);
 	}
 
 	SECTION("BLA")
@@ -53,7 +55,7 @@ SCENARIO("Get rules from istream", "[GetRules]" )
 			"<A> => a\n"
 			"<B> => b\n"
 		);
-		REQUIRE_THROWS_AS(GetRules(strm), std::logic_error);
+		REQUIRE_THROWS_AS(Impl::GetRules(strm), std::logic_error);
 	}
 
 	SECTION("BLA")
@@ -63,7 +65,7 @@ SCENARIO("Get rules from istream", "[GetRules]" )
 			"\n"
 			"<B> => b\n"
 		);
-		REQUIRE_THROWS_AS(GetRules(strm), std::logic_error);
+		REQUIRE_THROWS_AS(Impl::GetRules(strm), std::logic_error);
 	}
 
 	SECTION("BLA")
@@ -73,7 +75,7 @@ SCENARIO("Get rules from istream", "[GetRules]" )
 			"<B> => b\n"
 			"\n"
 		);
-		REQUIRE_THROWS_AS(GetRules(strm), std::logic_error);
+		REQUIRE_THROWS_AS(Impl::GetRules(strm), std::logic_error);
 	}
 
 	SECTION("BLA")
@@ -81,7 +83,7 @@ SCENARIO("Get rules from istream", "[GetRules]" )
 		std::stringstream strm(
 			"<A> =>\n"
 		);
-		REQUIRE_THROWS_AS(GetRules(strm), std::logic_error);
+		REQUIRE_THROWS_AS(Impl::GetRules(strm), std::logic_error);
 	}
 
 	SECTION("BLA")
@@ -89,7 +91,7 @@ SCENARIO("Get rules from istream", "[GetRules]" )
 		std::stringstream strm(
 			"a => a\n"
 		);
-		REQUIRE_THROWS_AS(GetRules(strm), std::logic_error);
+		REQUIRE_THROWS_AS(Impl::GetRules(strm), std::logic_error);
 	}
 
 	SECTION("BLA")
@@ -97,7 +99,7 @@ SCENARIO("Get rules from istream", "[GetRules]" )
 		std::stringstream strm(
 			"<A> a\n"
 		);
-		REQUIRE_THROWS_AS(GetRules(strm), std::logic_error);
+		REQUIRE_THROWS_AS(Impl::GetRules(strm), std::logic_error);
 	}
 
 	SECTION("BLA")
@@ -106,7 +108,7 @@ SCENARIO("Get rules from istream", "[GetRules]" )
 			"<A> => <B> a\n"
 			"<B> => b\n"
 		);
-		const auto [rules, nonTerminals, terminals] = GetRules(strm);
+		const auto [rules, nonTerminals, terminals] = Impl::GetRules(strm);
 		REQUIRE(rules ==  decltype(rules){
 			{ "<A>", { "<B>", "a" } },
 			{ "<B>", { "b" } } }
@@ -120,18 +122,18 @@ SCENARIO("Validate rules", "[ValidateRules]")
 {
 	SECTION("Empty-rules cannot contains another symbols")
 	{
-		REQUIRE_THROWS_AS(ValidateRules({ { "<A>", { "e", "<A>" } } }, {}), std::logic_error);
+		REQUIRE_THROWS_AS(Impl::ValidateRules({ { "<A>", { "e", "<A>" } } }, {}), std::logic_error);
 	}
 
 	SECTION("Rules cannot contains end-rule terminal (in raw input)")
 	{
-		REQUIRE_THROWS_AS(ValidateRules({ { "<A>", { TERMINAL_END_SEQUENCE } } }, {}), std::logic_error);
-		REQUIRE_THROWS_AS(ValidateRules({ { "<A>", { "a", TERMINAL_END_SEQUENCE } } }, {}), std::logic_error);
+		REQUIRE_THROWS_AS(Impl::ValidateRules({ { "<A>", { TERMINAL_END_SEQUENCE } } }, {}), std::logic_error);
+		REQUIRE_THROWS_AS(Impl::ValidateRules({ { "<A>", { "a", TERMINAL_END_SEQUENCE } } }, {}), std::logic_error);
 	}
 
 	SECTION("Rules cannot contains unknown non-terminals")
 	{
-		REQUIRE_THROWS_AS(ValidateRules({
+		REQUIRE_THROWS_AS(Impl::ValidateRules({
 			{ "<A>", { "<B> <C>" } },
 			{ "<B>", { "b" } } },
 			{ "<A>", "<B>" }), std::logic_error
@@ -142,11 +144,11 @@ SCENARIO("Validate rules", "[ValidateRules]")
 	{
 		{
 			const auto genNonTerminal = "<" + ToString(NONTERMINAL_GEN_PREFIX) + "A>";
-			REQUIRE_THROWS_AS(ValidateRules({ { genNonTerminal, { "a" } } }, { genNonTerminal }), std::logic_error);
+			REQUIRE_THROWS_AS(Impl::ValidateRules({ { genNonTerminal, { "a" } } }, { genNonTerminal }), std::logic_error);
 		}
 		{
 			const auto genNonTerminal = "<" + ToString(NONTERMINAL_GEN_PREFIX) + "A>";
-			REQUIRE_THROWS_AS(ValidateRules({ { "<A>", { genNonTerminal } } }, { "<A>", genNonTerminal }), std::logic_error);
+			REQUIRE_THROWS_AS(Impl::ValidateRules({ { "<A>", { genNonTerminal } } }, { "<A>", genNonTerminal }), std::logic_error);
 		}
 	}
 }
@@ -155,27 +157,27 @@ SCENARIO("Grammar validation", "[ValidateGrammar]")
 {
 	SECTION("Grammar cannot be empty")
 	{
-		REQUIRE_NOTHROW(ValidateGrammar({ { "<A>", { "a" } } }));
-		REQUIRE_THROWS_AS(ValidateGrammar({}), std::logic_error);
+		REQUIRE_NOTHROW(Impl::ValidateGrammar({ { "<A>", { "a" } } }));
+		REQUIRE_THROWS_AS(Impl::ValidateGrammar({}), std::logic_error);
 	}
 }
 
 SCENARIO("Replenished grammar recognition", "[IsReplenishedGrammar]")
 {
-	REQUIRE(IsReplenishedGrammar({
+	REQUIRE(Impl::IsReplenishedGrammar({
 		{ "<A>", { "<B>", "<C>" } },
 		{ "<B>", { "b" } },
 		{ "<C>", { "C" } },
 	}));
 
-	REQUIRE(IsReplenishedGrammar({
+	REQUIRE(Impl::IsReplenishedGrammar({
 		{ "<A>", { "<B>", "<C>" } },
 		{ "<A>", { "<C>", "<B>" } },
 		{ "<B>", { "b" } },
 		{ "<C>", { "C" } },
 	}));
 
-	REQUIRE_FALSE(IsReplenishedGrammar({
+	REQUIRE_FALSE(Impl::IsReplenishedGrammar({
 		{ "<A>", { "<A>", "<B>", "<C>" } },
 		{ "<A>", { "a" } },
 		{ "<B>", { "b" } },
@@ -198,7 +200,7 @@ SCENARIO("Replenished grammar", "[MakeReplenished]")
 
 		WHEN("MakeReplenished")
 		{
-			const auto [resGrammar, resNonTerminals, resTerminals] = MakeReplenished(grammar, nonTerminals, terminals);
+			const auto [resGrammar, resNonTerminals, resTerminals] = Impl::MakeReplenished(grammar, nonTerminals, terminals);
 
 			THEN("Axiom ending with end-rule terminal, others are same")
 			{
@@ -236,7 +238,7 @@ SCENARIO("Replenished grammar", "[MakeReplenished]")
 
 		WHEN("RemoveEmptyRules")
 		{
-			const auto [resGrammar, resNonTerminals, resTerminals] = MakeReplenished(grammar, nonTerminals, terminals);
+			const auto [resGrammar, resNonTerminals, resTerminals] = Impl::MakeReplenished(grammar, nonTerminals, terminals);
 
 			THEN("Grammar has no empty-rules")
 			{
@@ -274,7 +276,7 @@ SCENARIO("Replenished grammar", "[MakeReplenished]")
 
 		WHEN("MakeReplenished")
 		{
-			const auto [resGrammar, resNonTerminals, resTerminals] = MakeReplenished(grammar, nonTerminals, terminals);
+			const auto [resGrammar, resNonTerminals, resTerminals] = Impl::MakeReplenished(grammar, nonTerminals, terminals);
 
 			THEN("Added new rules in grammar")
 			{
@@ -325,7 +327,7 @@ SCENARIO("Empty-rules removing", "[RemoveEmptyRules]")
 
 		WHEN("RemoveEmptyRules")
 		{
-			REQUIRE_THROWS_AS(RemoveEmptyRules(grammar, terminals), std::logic_error);
+			REQUIRE_THROWS_AS(Impl::RemoveEmptyRules(grammar, terminals), std::logic_error);
 		}
 	}
 	
@@ -341,7 +343,7 @@ SCENARIO("Empty-rules removing", "[RemoveEmptyRules]")
 
 		WHEN("RemoveEmptyRules")
 		{
-			const auto [resGrammar, resTerminals] = RemoveEmptyRules(grammar, terminals);
+			const auto [resGrammar, resTerminals] = Impl::RemoveEmptyRules(grammar, terminals);
 
 			THEN("nothing happened with grammar")
 			{
@@ -365,7 +367,7 @@ SCENARIO("Empty-rules removing", "[RemoveEmptyRules]")
 
 		WHEN("RemoveEmptyRules")
 		{
-			const auto [resGrammar, resTerminals] = RemoveEmptyRules(grammar, terminals);
+			const auto [resGrammar, resTerminals] = Impl::RemoveEmptyRules(grammar, terminals);
 
 			THEN("Grammar has no empty-rules")
 			{
@@ -398,7 +400,7 @@ SCENARIO("Empty-rules removing", "[RemoveEmptyRules]")
 
 		WHEN("RemoveEmptyRules")
 		{
-			const auto [resGrammar, resTerminals] = RemoveEmptyRules(grammar, terminals);
+			const auto [resGrammar, resTerminals] = Impl::RemoveEmptyRules(grammar, terminals);
 
 			THEN("Grammar has no empty-rules")
 			{
@@ -434,7 +436,7 @@ SCENARIO("Empty-rules removing", "[RemoveEmptyRules]")
 
 		WHEN("RemoveEmptyRules")
 		{
-			const auto [resGrammar, resTerminals] = RemoveEmptyRules(grammar, terminals);
+			const auto [resGrammar, resTerminals] = Impl::RemoveEmptyRules(grammar, terminals);
 
 			THEN("Grammar has no empty-rules")
 			{
@@ -474,7 +476,7 @@ TEST_CASE("Get grammar from stream", "[GetGrammar]")
 
 	SECTION("Returns replenished grammar")
 	{
-		REQUIRE(IsReplenishedGrammar(grammar));
+		REQUIRE(Impl::IsReplenishedGrammar(grammar));
 	}
 
 	SECTION("Returns with axiom end-rule ending")
