@@ -1,7 +1,4 @@
-#include "Settings.hpp"
 #include "Common.hpp"
-#include "Table.hpp"
-#include "Rule.h"
 
 std::vector<std::string> Tokenize(const std::string& str, char separator)
 {
